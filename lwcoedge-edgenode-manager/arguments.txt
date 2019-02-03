@@ -1,0 +1,1 @@
+--server.port=10002 --NeededResources=F:/thesis/workspace_lwcoedge/lwcoedge-edgenode-manager/lwcoedge-neededresources.json --EdgenodeConfig=F:/thesis/workspace_lwcoedge/lwcoedge-edgenode-manager/lwcoedge-edgenodeconfig.json --PortsConfig=F:/thesis/workspace_lwcoedge/lwcoedge-core/lwcoedge-components-port.json 

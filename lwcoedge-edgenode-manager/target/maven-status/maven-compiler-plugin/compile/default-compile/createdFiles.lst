@@ -1,0 +1,5 @@
+br\edu\ufrj\lwcoedge\edgenodemgr\config\ConfigNeededResources.class
+br\edu\ufrj\lwcoedge\edgenodemgr\service\EdgeNodeManagerService.class
+br\edu\ufrj\lwcoedge\edgenodemgr\controller\EdgeNodeManagerController.class
+br\edu\ufrj\lwcoedge\edgenodemgr\LwcoedgeEdgenodeManagerApplication.class
+br\edu\ufrj\lwcoedge\edgenodemgr\config\ConfigEdgenode.class

@@ -1,0 +1,113 @@
+2018-08-23 11:40:03.502  INFO 9848 --- [main] b.e.u.l.vn.LwcoedgeVnSensingApplication  : Starting LwcoedgeVnSensingApplication v0.0.1-SNAPSHOT on MPITANGADELL with PID 9848 (F:\thesis\workspace_lwcoedge\lwcoedge-vn-sensing\target\lwcoedge-vn-sensing-0.0.1-SNAPSHOT.jar started by mpalv in F:\thesis\workspace_lwcoedge\lwcoedge-edgenode-manager)
+2018-08-23 11:40:03.511  INFO 9848 --- [main] b.e.u.l.vn.LwcoedgeVnSensingApplication  : No active profile set, falling back to default profiles: default
+2018-08-23 11:40:03.674  INFO 9848 --- [main] ConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@46f5f779: startup date [Thu Aug 23 11:40:03 BRT 2018]; root of context hierarchy
+2018-08-23 11:40:08.932  INFO 9848 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 11001 (http)
+2018-08-23 11:40:09.166  INFO 9848 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2018-08-23 11:40:09.167  INFO 9848 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet Engine: Apache Tomcat/8.5.32
+2018-08-23 11:40:09.205  INFO 9848 --- [localhost-startStop-1] o.a.catalina.core.AprLifecycleListener   : The APR based Apache Tomcat Native library which allows optimal performance in production environments was not found on the java.library.path: [C:\Program Files\Java\jdk1.8.0_144\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:/Program Files/Java/jre1.8.0_144/bin/server;C:/Program Files/Java/jre1.8.0_144/bin;C:/Program Files/Java/jre1.8.0_144/lib/amd64;C:\ProgramData\Oracle\Java\javapath;c:\windows\system32;c:\windows;c:\windows\system32\wbem;c:\windows\system32\windowspowershell\v1.0\;C:\Program Files (x86)\Skype\Phone\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files\PuTTY\;c:\Python27;;C:\WINDOWS\System32\OpenSSH\;C:\PostgreSQL\pg10\bin;C:\Users\mpalv\AppData\Local\Microsoft\WindowsApps;C:\Users\mpalv\AppData\Local\Programs\MiKTeX 2.9\miktex\bin\x64\;;F:\eclipse-photon;;.]
+2018-08-23 11:40:09.473  INFO 9848 --- [localhost-startStop-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2018-08-23 11:40:12.085  INFO 9848 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'characterEncodingFilter' to: [/*]
+2018-08-23 11:40:12.086  INFO 9848 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'webMvcMetricsFilter' to: [/*]
+2018-08-23 11:40:12.087  INFO 9848 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2018-08-23 11:40:12.087  INFO 9848 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'httpPutFormContentFilter' to: [/*]
+2018-08-23 11:40:12.088  INFO 9848 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'requestContextFilter' to: [/*]
+2018-08-23 11:40:12.091  INFO 9848 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'httpTraceFilter' to: [/*]
+2018-08-23 11:40:12.092  INFO 9848 --- [localhost-startStop-1] o.s.b.w.servlet.ServletRegistrationBean  : Servlet dispatcherServlet mapped to [/]
+2018-08-23 11:40:14.146  INFO 9848 --- [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoint(s) beneath base path '/actuator'
+2018-08-23 11:40:14.191  INFO 9848 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator/health],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto public java.lang.Object org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$OperationHandler.handle(javax.servlet.http.HttpServletRequest,java.util.Map<java.lang.String, java.lang.String>)
+2018-08-23 11:42:11.070  INFO 9848 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator/info],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto public java.lang.Object org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$OperationHandler.handle(javax.servlet.http.HttpServletRequest,java.util.Map<java.lang.String, java.lang.String>)
+2018-08-23 11:42:11.078  INFO 9848 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator/metrics],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto public java.lang.Object org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$OperationHandler.handle(javax.servlet.http.HttpServletRequest,java.util.Map<java.lang.String, java.lang.String>)
+2018-08-23 11:42:11.078  INFO 9848 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator/metrics/{requiredMetricName}],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto public java.lang.Object org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$OperationHandler.handle(javax.servlet.http.HttpServletRequest,java.util.Map<java.lang.String, java.lang.String>)
+2018-08-23 11:42:11.080  INFO 9848 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto protected java.util.Map<java.lang.String, java.util.Map<java.lang.String, org.springframework.boot.actuate.endpoint.web.Link>> org.springframework.boot.actuate.endpoint.web.servlet.WebMvcEndpointHandlerMapping.links(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)
+2018-08-23 11:42:11.262  INFO 9848 --- [main] o.s.j.e.a.AnnotationMBeanExporter        : Registering beans for JMX exposure on startup
+2018-08-23 11:42:11.365  INFO 9848 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 11001 (http) with context path ''
+2018-08-23 11:42:11.373  INFO 9848 --- [main] b.e.u.l.vn.LwcoedgeVnSensingApplication  : Started LwcoedgeVnSensingApplication in 129.153 seconds (JVM running for 131.977)
+2018-08-23 11:42:11.527  INFO 9848 --- [main] b.e.u.l.vn.sensing.VirtualNodeSensing    : -------------
+2018-08-23 11:42:11.527  INFO 9848 --- [main] b.e.u.l.vn.sensing.VirtualNodeSensing    : Initializing VirtualNodeSensing [MPITANGADELL.UFRJ.UbicompLab.temperature] [Port=11001]...
+2018-08-23 11:42:11.528  INFO 9848 --- [main] b.e.u.l.vn.sensing.VirtualNodeSensing    : Establishing communication with the end devices...
+2018-08-23 11:42:11.537  INFO 9848 --- [main] b.e.u.l.vn.sensing.VirtualNodeSensing    : End device ->DeviceID1
+2018-08-23 11:42:11.636  INFO 9848 --- [main] b.e.u.l.vn.sensing.VirtualNodeSensing    : VirtualNodeSensing is started.
+2018-08-23 11:42:11.636  INFO 9848 --- [main] b.e.u.l.vn.sensing.VirtualNodeSensing    : -------------
+2018-08-23 11:43:26.918  INFO 7280 --- [main] b.e.u.l.vn.LwcoedgeVnSensingApplication  : Starting LwcoedgeVnSensingApplication v0.0.1-SNAPSHOT on MPITANGADELL with PID 7280 (F:\thesis\workspace_lwcoedge\lwcoedge-vn-sensing\target\lwcoedge-vn-sensing-0.0.1-SNAPSHOT.jar started by mpalv in F:\thesis\workspace_lwcoedge\lwcoedge-edgenode-manager)
+2018-08-23 11:43:26.924  INFO 7280 --- [main] b.e.u.l.vn.LwcoedgeVnSensingApplication  : No active profile set, falling back to default profiles: default
+2018-08-23 11:43:27.076  INFO 7280 --- [main] ConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@6f79caec: startup date [Thu Aug 23 11:43:27 BRT 2018]; root of context hierarchy
+2018-08-23 11:43:30.910  INFO 7280 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 11001 (http)
+2018-08-23 11:43:30.994  INFO 7280 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2018-08-23 11:43:30.995  INFO 7280 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet Engine: Apache Tomcat/8.5.32
+2018-08-23 11:43:31.070  INFO 7280 --- [localhost-startStop-1] o.a.catalina.core.AprLifecycleListener   : The APR based Apache Tomcat Native library which allows optimal performance in production environments was not found on the java.library.path: [C:\Program Files\Java\jdk1.8.0_144\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:/Program Files/Java/jre1.8.0_144/bin/server;C:/Program Files/Java/jre1.8.0_144/bin;C:/Program Files/Java/jre1.8.0_144/lib/amd64;C:\ProgramData\Oracle\Java\javapath;c:\windows\system32;c:\windows;c:\windows\system32\wbem;c:\windows\system32\windowspowershell\v1.0\;C:\Program Files (x86)\Skype\Phone\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files\PuTTY\;c:\Python27;;C:\WINDOWS\System32\OpenSSH\;C:\PostgreSQL\pg10\bin;C:\Users\mpalv\AppData\Local\Microsoft\WindowsApps;C:\Users\mpalv\AppData\Local\Programs\MiKTeX 2.9\miktex\bin\x64\;;F:\eclipse-photon;;.]
+2018-08-23 11:43:31.287  INFO 7280 --- [localhost-startStop-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2018-08-23 11:43:32.923  INFO 7280 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'characterEncodingFilter' to: [/*]
+2018-08-23 11:43:32.924  INFO 7280 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'webMvcMetricsFilter' to: [/*]
+2018-08-23 11:43:32.924  INFO 7280 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2018-08-23 11:43:32.924  INFO 7280 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'httpPutFormContentFilter' to: [/*]
+2018-08-23 11:43:32.924  INFO 7280 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'requestContextFilter' to: [/*]
+2018-08-23 11:43:32.924  INFO 7280 --- [localhost-startStop-1] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'httpTraceFilter' to: [/*]
+2018-08-23 11:43:32.925  INFO 7280 --- [localhost-startStop-1] o.s.b.w.servlet.ServletRegistrationBean  : Servlet dispatcherServlet mapped to [/]
+2018-08-23 11:43:34.439  INFO 7280 --- [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoint(s) beneath base path '/actuator'
+2018-08-23 11:43:34.490  INFO 7280 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator/health],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto public java.lang.Object org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$OperationHandler.handle(javax.servlet.http.HttpServletRequest,java.util.Map<java.lang.String, java.lang.String>)
+2018-08-23 11:43:40.037  INFO 7280 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator/info],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto public java.lang.Object org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$OperationHandler.handle(javax.servlet.http.HttpServletRequest,java.util.Map<java.lang.String, java.lang.String>)
+2018-08-23 11:43:40.037  INFO 7280 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator/metrics],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto public java.lang.Object org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$OperationHandler.handle(javax.servlet.http.HttpServletRequest,java.util.Map<java.lang.String, java.lang.String>)
+2018-08-23 11:43:40.037  INFO 7280 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator/metrics/{requiredMetricName}],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto public java.lang.Object org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$OperationHandler.handle(javax.servlet.http.HttpServletRequest,java.util.Map<java.lang.String, java.lang.String>)
+2018-08-23 11:43:40.037  INFO 7280 --- [main] s.b.a.e.w.s.WebMvcEndpointHandlerMapping : Mapped "{[/actuator],methods=[GET],produces=[application/vnd.spring-boot.actuator.v2+json || application/json]}" onto protected java.util.Map<java.lang.String, java.util.Map<java.lang.String, org.springframework.boot.actuate.endpoint.web.Link>> org.springframework.boot.actuate.endpoint.web.servlet.WebMvcEndpointHandlerMapping.links(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)
+2018-08-23 11:43:40.298  INFO 7280 --- [main] o.s.j.e.a.AnnotationMBeanExporter        : Registering beans for JMX exposure on startup
+2018-08-23 11:43:40.399 ERROR 7280 --- [main] o.apache.catalina.core.StandardService   : Failed to start connector [Connector[HTTP/1.1-11001]]
+
+org.apache.catalina.LifecycleException: Failed to start component [Connector[HTTP/1.1-11001]]
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:167) ~[tomcat-embed-core-8.5.32.jar!/:8.5.32]
+	at org.apache.catalina.core.StandardService.addConnector(StandardService.java:225) ~[tomcat-embed-core-8.5.32.jar!/:8.5.32]
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.addPreviouslyRemovedConnectors(TomcatWebServer.java:256) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.start(TomcatWebServer.java:198) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.startWebServer(ServletWebServerApplicationContext.java:300) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.finishRefresh(ServletWebServerApplicationContext.java:162) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:553) [spring-context-5.0.8.RELEASE.jar!/:5.0.8.RELEASE]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:140) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:762) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:398) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:330) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1258) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1246) [spring-boot-2.0.4.RELEASE.jar!/:2.0.4.RELEASE]
+	at br.edu.ufrj.lwcoedge.vn.LwcoedgeVnSensingApplication.main(LwcoedgeVnSensingApplication.java:10) [classes!/:0.0.1-SNAPSHOT]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_144]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_144]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_144]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_144]
+	at org.springframework.boot.loader.MainMethodRunner.run(MainMethodRunner.java:48) [lwcoedge-vn-sensing-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+	at org.springframework.boot.loader.Launcher.launch(Launcher.java:87) [lwcoedge-vn-sensing-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+	at org.springframework.boot.loader.Launcher.launch(Launcher.java:50) [lwcoedge-vn-sensing-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+	at org.springframework.boot.loader.JarLauncher.main(JarLauncher.java:51) [lwcoedge-vn-sensing-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+Caused by: org.apache.catalina.LifecycleException: Protocol handler start failed
+	at org.apache.catalina.connector.Connector.startInternal(Connector.java:1020) ~[tomcat-embed-core-8.5.32.jar!/:8.5.32]
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:150) ~[tomcat-embed-core-8.5.32.jar!/:8.5.32]
+	... 21 common frames omitted
+Caused by: java.net.BindException: Address already in use: bind
+	at sun.nio.ch.Net.bind0(Native Method) ~[na:1.8.0_144]
+	at sun.nio.ch.Net.bind(Net.java:433) ~[na:1.8.0_144]
+	at sun.nio.ch.Net.bind(Net.java:425) ~[na:1.8.0_144]
+	at sun.nio.ch.ServerSocketChannelImpl.bind(ServerSocketChannelImpl.java:223) ~[na:1.8.0_144]
+	at sun.nio.ch.ServerSocketAdaptor.bind(ServerSocketAdaptor.java:74) ~[na:1.8.0_144]
+	at org.apache.tomcat.util.net.NioEndpoint.bind(NioEndpoint.java:210) ~[tomcat-embed-core-8.5.32.jar!/:8.5.32]
+	at org.apache.tomcat.util.net.AbstractEndpoint.start(AbstractEndpoint.java:1150) ~[tomcat-embed-core-8.5.32.jar!/:8.5.32]
+	at org.apache.coyote.AbstractProtocol.start(AbstractProtocol.java:591) ~[tomcat-embed-core-8.5.32.jar!/:8.5.32]
+	at org.apache.catalina.connector.Connector.startInternal(Connector.java:1018) ~[tomcat-embed-core-8.5.32.jar!/:8.5.32]
+	... 22 common frames omitted
+
+2018-08-23 11:43:40.412  INFO 7280 --- [main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2018-08-23 11:43:40.447  INFO 7280 --- [main] ConditionEvaluationReportLoggingListener : 
+
+Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+2018-08-23 11:43:40.452 ERROR 7280 --- [main] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+The Tomcat connector configured to listen on port 11001 failed to start. The port may already be in use or the connector may be misconfigured.
+
+Action:
+
+Verify the connector's configuration, identify and stop any process that's listening on port 11001, or configure this application to listen on another port.
+
+2018-08-23 11:43:40.455  INFO 7280 --- [main] ConfigServletWebServerApplicationContext : Closing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@6f79caec: startup date [Thu Aug 23 11:43:27 BRT 2018]; root of context hierarchy
+2018-08-23 11:43:40.469  INFO 7280 --- [main] o.s.j.e.a.AnnotationMBeanExporter        : Unregistering JMX-exposed beans on shutdown

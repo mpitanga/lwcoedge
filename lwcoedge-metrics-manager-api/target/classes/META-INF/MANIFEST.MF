@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Built-By: mpalv
+Build-Jdk: 10.0.2
+Implementation-Title: lwcoedge-metrics-manager-api
+Implementation-Version: 0.0.1-SNAPSHOT
+Implementation-Vendor-Id: lwcoedge-manager
+Implementation-URL: https://projects.spring.io/spring-boot/#/spring-bo
+ ot-starter-parent/lwcoedge-metrics-manager-api
+Created-By: Maven Integration for Eclipse
+

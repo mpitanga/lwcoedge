@@ -1,0 +1,21 @@
+2018-12-08 07:37:29.229  INFO 2080 --- [main] .l.m.m.LwcoedgeMetricsManagerApplication : Starting LwcoedgeMetricsManagerApplication on MPITANGADELL with PID 2080 (F:\thesis\workspace_lwcoedge\lwcoedge-metrics-manager-api\target\classes started by mpalv in F:\thesis\workspace_lwcoedge\lwcoedge-metrics-manager-api)
+2018-12-08 07:37:29.237  INFO 2080 --- [main] .l.m.m.LwcoedgeMetricsManagerApplication : No active profile set, falling back to default profiles: default
+2018-12-08 07:37:29.518  INFO 2080 --- [main] ConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@62ef27a8: startup date [Sat Dec 08 07:37:29 BRST 2018]; root of context hierarchy
+2018-12-08 07:37:31.708  INFO 2080 --- [main] org.xnio                                 : XNIO version 3.3.8.Final
+2018-12-08 07:37:31.792  INFO 2080 --- [main] org.xnio.nio                             : XNIO NIO Implementation Version 3.3.8.Final
+2018-12-08 07:37:31.995  WARN 2080 --- [main] io.undertow.websockets.jsr               : UT026009: XNIO worker was not set on WebSocketDeploymentInfo, the default worker will be used
+2018-12-08 07:37:31.995  WARN 2080 --- [main] io.undertow.websockets.jsr               : UT026010: Buffer pool was not set on WebSocketDeploymentInfo, the default pool will be used
+2018-12-08 07:37:32.047  INFO 2080 --- [main] io.undertow.servlet                      : Initializing Spring embedded WebApplicationContext
+2018-12-08 07:37:32.101  INFO 2080 --- [main] o.s.b.w.servlet.ServletRegistrationBean  : Servlet dispatcherServlet mapped to [/]
+2018-12-08 07:37:32.109  INFO 2080 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'characterEncodingFilter' to: [/*]
+2018-12-08 07:37:32.109  INFO 2080 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2018-12-08 07:37:32.109  INFO 2080 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'httpPutFormContentFilter' to: [/*]
+2018-12-08 07:37:32.109  INFO 2080 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'requestContextFilter' to: [/*]
+2018-12-08 07:37:32.829  INFO 2080 --- [main] o.s.j.e.a.AnnotationMBeanExporter        : Registering beans for JMX exposure on startup
+2018-12-08 07:37:33.227  INFO 2080 --- [main] o.s.b.w.e.u.UndertowServletWebServer     : Undertow started on port(s) 10500 (http) with context path ''
+2018-12-08 07:37:33.258  INFO 2080 --- [main] .l.m.m.LwcoedgeMetricsManagerApplication : Started LwcoedgeMetricsManagerApplication in 4.86 seconds (JVM running for 7.37)
+2018-12-08 07:51:33.454  INFO 2080 --- [XNIO-2 task-1] io.undertow.servlet                      : Initializing Spring FrameworkServlet 'dispatcherServlet'
+2018-12-08 08:06:01.723  INFO 2080 --- [RMI TCP Connection(38)-127.0.0.1] inMXBeanRegistrar$SpringApplicationAdmin : Application shutdown requested.
+2018-12-08 08:06:01.739  INFO 2080 --- [RMI TCP Connection(38)-127.0.0.1] ConfigServletWebServerApplicationContext : Closing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@62ef27a8: startup date [Sat Dec 08 07:37:29 BRST 2018]; root of context hierarchy
+2018-12-08 08:06:01.741  INFO 2080 --- [RMI TCP Connection(38)-127.0.0.1] o.s.j.e.a.AnnotationMBeanExporter        : Unregistering JMX-exposed beans on shutdown
+2018-12-08 08:06:01.741  INFO 2080 --- [RMI TCP Connection(38)-127.0.0.1] io.undertow.servlet                      : Destroying Spring FrameworkServlet 'dispatcherServlet'

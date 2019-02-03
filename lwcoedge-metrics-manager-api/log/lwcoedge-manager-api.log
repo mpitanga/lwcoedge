@@ -1,0 +1,40 @@
+2018-08-31 09:59:49.039  INFO 14352 --- [main] b.e.u.l.m.LwcoedgeManagerApplication     : Starting LwcoedgeManagerApplication on MPITANGADELL with PID 14352 (F:\thesis\workspace_lwcoedge\lwcoedge-manager-api\target\classes started by mpalv in F:\thesis\workspace_lwcoedge\lwcoedge-manager-api)
+2018-08-31 09:59:49.083  INFO 14352 --- [main] b.e.u.l.m.LwcoedgeManagerApplication     : No active profile set, falling back to default profiles: default
+2018-08-31 09:59:49.441  INFO 14352 --- [main] ConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@75329a49: startup date [Fri Aug 31 09:59:49 BRT 2018]; root of context hierarchy
+2018-08-31 09:59:52.555  INFO 14352 --- [main] org.xnio                                 : XNIO version 3.3.8.Final
+2018-08-31 09:59:52.607  INFO 14352 --- [main] org.xnio.nio                             : XNIO NIO Implementation Version 3.3.8.Final
+2018-08-31 09:59:52.727  WARN 14352 --- [main] io.undertow.websockets.jsr               : UT026009: XNIO worker was not set on WebSocketDeploymentInfo, the default worker will be used
+2018-08-31 09:59:52.728  WARN 14352 --- [main] io.undertow.websockets.jsr               : UT026010: Buffer pool was not set on WebSocketDeploymentInfo, the default pool will be used
+2018-08-31 09:59:52.799  INFO 14352 --- [main] io.undertow.servlet                      : Initializing Spring embedded WebApplicationContext
+2018-08-31 09:59:53.000  INFO 14352 --- [main] o.s.b.w.servlet.ServletRegistrationBean  : Servlet dispatcherServlet mapped to [/]
+2018-08-31 09:59:53.021  INFO 14352 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'characterEncodingFilter' to: [/*]
+2018-08-31 09:59:53.042  INFO 14352 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2018-08-31 09:59:53.044  INFO 14352 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'httpPutFormContentFilter' to: [/*]
+2018-08-31 09:59:53.046  INFO 14352 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'requestContextFilter' to: [/*]
+2018-08-31 09:59:54.589  INFO 14352 --- [main] o.s.j.e.a.AnnotationMBeanExporter        : Registering beans for JMX exposure on startup
+2018-08-31 09:59:54.776  INFO 14352 --- [main] o.s.b.w.e.u.UndertowServletWebServer     : Undertow started on port(s) 10500 (http) with context path ''
+2018-08-31 09:59:54.792  INFO 14352 --- [main] b.e.u.l.m.LwcoedgeManagerApplication     : Started LwcoedgeManagerApplication in 7.252 seconds (JVM running for 11.526)
+2018-08-31 10:00:49.085  INFO 14352 --- [XNIO-2 task-1] io.undertow.servlet                      : Initializing Spring FrameworkServlet 'dispatcherServlet'
+2018-08-31 10:26:31.278  INFO 14352 --- [RMI TCP Connection(34)-127.0.0.1] inMXBeanRegistrar$SpringApplicationAdmin : Application shutdown requested.
+2018-08-31 10:26:31.280  INFO 14352 --- [RMI TCP Connection(34)-127.0.0.1] ConfigServletWebServerApplicationContext : Closing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@75329a49: startup date [Fri Aug 31 09:59:49 BRT 2018]; root of context hierarchy
+2018-08-31 10:26:31.289  INFO 14352 --- [RMI TCP Connection(34)-127.0.0.1] o.s.j.e.a.AnnotationMBeanExporter        : Unregistering JMX-exposed beans on shutdown
+2018-08-31 10:26:31.297  INFO 14352 --- [RMI TCP Connection(34)-127.0.0.1] io.undertow.servlet                      : Destroying Spring FrameworkServlet 'dispatcherServlet'
+2018-08-31 12:42:31.531  INFO 10836 --- [main] .l.m.m.LwcoedgeMetricsManagerApplication : Starting LwcoedgeMetricsManagerApplication on MPITANGADELL with PID 10836 (F:\thesis\workspace_lwcoedge\lwcoedge-metrics-manager-api\target\classes started by mpalv in F:\thesis\workspace_lwcoedge\lwcoedge-metrics-manager-api)
+2018-08-31 12:42:31.547  INFO 10836 --- [main] .l.m.m.LwcoedgeMetricsManagerApplication : No active profile set, falling back to default profiles: default
+2018-08-31 12:42:31.719  INFO 10836 --- [main] ConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@1677d1: startup date [Fri Aug 31 12:42:31 BRT 2018]; root of context hierarchy
+2018-08-31 12:42:34.578  INFO 10836 --- [main] org.xnio                                 : XNIO version 3.3.8.Final
+2018-08-31 12:42:34.618  INFO 10836 --- [main] org.xnio.nio                             : XNIO NIO Implementation Version 3.3.8.Final
+2018-08-31 12:42:34.759  WARN 10836 --- [main] io.undertow.websockets.jsr               : UT026009: XNIO worker was not set on WebSocketDeploymentInfo, the default worker will be used
+2018-08-31 12:42:34.775  WARN 10836 --- [main] io.undertow.websockets.jsr               : UT026010: Buffer pool was not set on WebSocketDeploymentInfo, the default pool will be used
+2018-08-31 12:42:34.837  INFO 10836 --- [main] io.undertow.servlet                      : Initializing Spring embedded WebApplicationContext
+2018-08-31 12:42:35.009  INFO 10836 --- [main] o.s.b.w.servlet.ServletRegistrationBean  : Servlet dispatcherServlet mapped to [/]
+2018-08-31 12:42:35.025  INFO 10836 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'characterEncodingFilter' to: [/*]
+2018-08-31 12:42:35.025  INFO 10836 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2018-08-31 12:42:35.025  INFO 10836 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'httpPutFormContentFilter' to: [/*]
+2018-08-31 12:42:35.040  INFO 10836 --- [main] o.s.b.w.servlet.FilterRegistrationBean   : Mapping filter: 'requestContextFilter' to: [/*]
+2018-08-31 12:42:36.524  INFO 10836 --- [main] o.s.j.e.a.AnnotationMBeanExporter        : Registering beans for JMX exposure on startup
+2018-08-31 12:42:36.714  INFO 10836 --- [main] o.s.b.w.e.u.UndertowServletWebServer     : Undertow started on port(s) 10500 (http) with context path ''
+2018-08-31 12:42:36.714  INFO 10836 --- [main] .l.m.m.LwcoedgeMetricsManagerApplication : Started LwcoedgeMetricsManagerApplication in 6.447 seconds (JVM running for 9.693)
+2018-08-31 12:42:46.081  INFO 10836 --- [RMI TCP Connection(7)-127.0.0.1] inMXBeanRegistrar$SpringApplicationAdmin : Application shutdown requested.
+2018-08-31 12:42:46.093  INFO 10836 --- [RMI TCP Connection(7)-127.0.0.1] ConfigServletWebServerApplicationContext : Closing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@1677d1: startup date [Fri Aug 31 12:42:31 BRT 2018]; root of context hierarchy
+2018-08-31 12:42:46.096  INFO 10836 --- [RMI TCP Connection(7)-127.0.0.1] o.s.j.e.a.AnnotationMBeanExporter        : Unregistering JMX-exposed beans on shutdown

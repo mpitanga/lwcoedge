@@ -1,0 +1,3 @@
+br\edu\ufrj\lwcoedge\metrics\manager\controller\LWCoEdgeMetricsManagerController.class
+br\edu\ufrj\lwcoedge\metrics\manager\LwcoedgeMetricsManagerApplication.class
+br\edu\ufrj\lwcoedge\metrics\manager\service\ExperimentService.class
