@@ -1,0 +1,30 @@
+{
+"experimentname":"experiment2-collab-80",
+"callbackurl":"http://192.168.237.127:8081/myapp/callback/result",
+"edgenodes" : ["192.168.237.128", "192.168.237.129", "192.168.237.130", "192.168.237.131", "192.168.237.132"],
+"entrypointport":8080,
+"basepath":"f:/lwcoedge/experimento/results/",
+"executeexperiment":true,
+"clearmetrics":true,
+"generateresults":true,
+"idxnode":-1,
+"times":1,
+"cycles":1,
+"requestvariation":5000,
+"maxfreshness":5000,
+"maxresponsetime" : 1000,
+"randomfreshness":false,
+"idxdatatype":0,
+"datatypeids":[
+		"UFRJ.UbicompLab.temperature",
+		"UFRJ.UbicompLab.humidity",
+		"UFRJ.UbicompLab.luminosity",
+		"UFRJ.UbicompLab.smoke"
+		],
+"collaboration": {
+		"active" : true,
+		"datasharingactivated": {
+			"percentageofrequests":80
+		}
+	}
+}
