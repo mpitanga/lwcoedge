@@ -1,0 +1,3 @@
+br\edu\ufrj\lwcoedge\applicationapi\service\ApplicationAPIService.class
+br\edu\ufrj\lwcoedge\applicationapi\LwcoedgeApplicationApiApplication.class
+br\edu\ufrj\lwcoedge\applicationapi\controller\ApplicationAPIController.class
