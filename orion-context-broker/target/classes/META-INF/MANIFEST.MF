@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Built-By: mpalv
+Build-Jdk: 10.0.2
+Implementation-Title: orion-context-broker
+Implementation-Version: 0.0.1-SNAPSHOT
+Implementation-Vendor-Id: br.com.context.broker
+Implementation-Vendor: Pivotal Software, Inc.
+Implementation-URL: http://projects.spring.io/spring-boot/orion-contex
+ t-broker/
+Created-By: Maven Integration for Eclipse
+
