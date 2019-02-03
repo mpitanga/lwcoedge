@@ -1,0 +1,15 @@
+{
+	"experimentname": "experiment1-nocollab",
+	"basepath": "f:/lwcoedge/experimento/results/",
+	"edgenodes": [
+		"192.168.237.128",
+		"192.168.237.129",
+		"192.168.237.130",
+		"192.168.237.131",
+		"192.168.237.132"
+	],
+	"idxnode": -1,
+	"times": 10,
+	"cycles": 5,
+	"requestvariation": 200
+}
