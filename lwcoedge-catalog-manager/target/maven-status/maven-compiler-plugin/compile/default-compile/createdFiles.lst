@@ -1,0 +1,4 @@
+br\edu\ufrj\lwcoedge\catalogmgr\LwcoedgeCatalogManagerApplication.class
+br\edu\ufrj\lwcoedge\catalogmgr\service\CatalogMgrService.class
+br\edu\ufrj\lwcoedge\catalogmgr\controller\CatalogMgrController.class
+br\edu\ufrj\lwcoedge\catalogmgr\service\Repository.class

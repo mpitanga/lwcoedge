@@ -1,0 +1,17 @@
+FROM openjdk:12-alpine
+
+MAINTAINER Marcelo Pitanga <mpitanga@gmail.com>
+
+# environment variables
+ENV APP_DIR=/lwcoedge
+ENV APP=lwcoedge-catalog-manager-0.0.1-SNAPSHOT.jar
+ENV JSON1=lwcoedge-catalogdescriptors.json
+
+#copy JAR and property files to the image
+COPY $APP $APP_DIR/$APP
+COPY $JSON1 $APP_DIR/$JSON1
+
+#set the working directory
+WORKDIR $APP_DIR
+
+ENTRYPOINT ["java", "-XX:+UseG1GC", "-jar", "lwcoedge-catalog-manager-0.0.1-SNAPSHOT.jar"]

@@ -1,0 +1,1 @@
+--server.port=10000 --CatalogDescriptors=F:/thesis/workspace_lwcoedge/lwcoedge-catalog-manager/lwcoedge-catalogdescriptors.json
