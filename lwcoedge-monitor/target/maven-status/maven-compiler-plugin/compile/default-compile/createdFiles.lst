@@ -1,0 +1,6 @@
+br\edu\ufrj\lwcoedge\monitor\model\Measurements.class
+br\edu\ufrj\lwcoedge\monitor\controller\MonitorController.class
+br\edu\ufrj\lwcoedge\monitor\model\AvailableTags.class
+br\edu\ufrj\lwcoedge\monitor\LwcoedgeMonitorApplication.class
+br\edu\ufrj\lwcoedge\monitor\model\ActuatorMetrics.class
+br\edu\ufrj\lwcoedge\monitor\service\MonitorService.class
