@@ -1,0 +1,1 @@
+cmd /c start java -XX:+UseShenandoahGC -Xmx32m -Xms8m -XX:+UnlockExperimentalVMOptions -XX:ShenandoahUncommitDelay=2000 -XX:ShenandoahGuaranteedGCInterval=10000 -jar lwcoedge-callback-test-0.0.1-SNAPSHOT.jar --server.port=80

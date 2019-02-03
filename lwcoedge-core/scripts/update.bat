@@ -1,0 +1,12 @@
+copy F:\thesis\workspace_lwcoedge\lwcoedge-application-api\target\lwcoedge-application-api-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-catalog-manager\target\lwcoedge-catalog-manager-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-edgenode-manager\target\lwcoedge-edgenode-manager-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-monitor\target\lwcoedge-monitor-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-p2pcollaboration\target\lwcoedge-p2pcollaboration-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-p2pdatasharing\target\lwcoedge-p2pdatasharing-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-resourceallocator\target\lwcoedge-resourceallocator-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-resourceprovisioner\target\lwcoedge-resourceprovisioner-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-vn-instancecache\target\lwcoedge-vn-instancecache-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-vn-sensing\target\lwcoedge-vn-sensing-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-metrics-manager-api\target\lwcoedge-metrics-manager-api-0.0.1-SNAPSHOT.jar /y
+copy F:\thesis\workspace_lwcoedge\lwcoedge-experiment-0\target\lwcoedge-experiment-0-0.0.1-SNAPSHOT.jar /y

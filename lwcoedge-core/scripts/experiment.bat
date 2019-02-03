@@ -1,0 +1,1 @@
+cmd /c start java -XX:+UseShenandoahGC -Xmx32m -Xms4m -XX:+UnlockExperimentalVMOptions -XX:ShenandoahUncommitDelay=2000 -XX:ShenandoahGuaranteedGCInterval=10000 -jar lwcoedge-experiment-0-0.0.1-SNAPSHOT.jar --execute=%1 --clearmetrics=%2

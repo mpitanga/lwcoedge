@@ -1,0 +1,8 @@
+[21:22, 1/9/2018] Porcão: services firewalld stop
+
+systemctl disable firewalld
+systemctl stop firewalld
+
+[21:22, 1/9/2018] Porcão: setenforce 0
+[21:24, 1/9/2018] Porcão: Depois tem que destativar vim /etc/sysconfig/selinux #SELINUX=disable
+getenforce
