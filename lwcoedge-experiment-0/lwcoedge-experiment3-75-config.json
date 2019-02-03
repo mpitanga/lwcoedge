@@ -1,0 +1,30 @@
+{
+"callbackurl":"http://192.168.146.1:80/myapp/callback/result",
+"entrypointport":8080,
+"basepath":"f:/lwcoedge/experimento/results/",
+"experimentname":"experiment3_75",
+"executeexperiment":true,
+"clearmetrics":true,
+"generateresults":true,
+"edgenodes" : ["192.168.14.135"],
+"idxnode": -1,
+"times":1,
+"cycles":1,
+"requestvariation":3000,
+"maxfreshness":5000,
+"maxresponsetime" : 1000,
+"randomfreshness":false,
+"idxdatatype":-1,
+"datatypeids":[
+		"UFRJ.UbicompLab.temperature",
+		"UFRJ.UbicompLab.humidity",
+		"UFRJ.UbicompLab.luminosity",
+		"UFRJ.UbicompLab.smoke"
+	],
+"collaboration": {
+		"active" : true,
+		"datasharingactivated": {
+			"percentageofrequests":75
+		}
+}
+}
