@@ -1,0 +1,26 @@
+[Build]
+
+docker build -t lw_coedge_simple --label lw_coedge_simple .
+
+[/Build]
+
+[NOVOS]
+
+docker run -d -p 11001:11001 --name EN1_UFRJ_UbicompLab_temperature --hostname EN1_UFRJ_UbicompLab_temperature lw_coedge_simple "--server.port=1001" "--logging.file=./log/lwcoedge-vn-sensing.log" "--VN={\"id\":\"MPITANGADELL.UFRJ.UbicompLab.temperature\",\"datatype\":{\"id\":{\"where\":\"UFRJ\",\"who\":\"UbicompLab\",\"what\":\"temperature\"},\"description\":null,\"type\":\"SIMPLE\",\"element\":[{\"value\":\"DeviceID1\"}]},\"data\":{},\"neighbors\":[], \"port\":1001}"
+docker run -d -p 11002:11002 --name EN1_UFRJ_UbicompLab_humidity --hostname EN1_UFRJ_UbicompLab_humidity lw_coedge_simple "--server.port=1002" "--logging.file=./log/lwcoedge-vn-sensing.log" "--VN={\"id\":\"MPITANGADELL.UFRJ.UbicompLab.humidity\",\"datatype\":{\"id\":{\"where\":\"UFRJ\",\"who\":\"UbicompLab\",\"what\":\"temperature\"},\"description\":null,\"type\":\"SIMPLE\",\"element\":[{\"value\":\"DeviceID2\"}]},\"data\":{},\"neighbors\":[], \"port\":1002}"
+
+docker stop EN1_UFRJ_UbicompLab_temperature
+docker rm EN1_UFRJ_UbicompLab_temperature
+
+[/NOVOS]
+
+
+#restart o programa dentro do container
+
+https://stackoverflow.com/questions/27947865/docker-how-to-restart-process-inside-of-container
+https://kuldeeparya.wordpress.com/2015/01/17/docker-how-to-restart-a-service-running-in-docker-container/
+
+#importante
+http://royvanrijn.com/blog/2018/05/java-and-docker-memory-limits/
+
+https://developers.redhat.com/blog/2017/03/14/java-inside-docker/

@@ -1,0 +1,20 @@
+# Docker image for Demo micro service 
+
+FROM alpine:3.8
+MAINTAINER Marcelo Pitanga <mpitanga@gmail.com>
+LABEL Description="LW-CoEdge - Virtual Node (Sensing)"
+
+RUN apk --update add openjdk10-jre
+
+# environment variables
+ENV APP_DIR=/lw-coedge/vn-se
+ENV APP=lwcoedge-vn-sensing-0.0.1.jar
+
+#copy JAR and property files to the image
+COPY lwcoedge-vn-sensing-0.0.1-SNAPSHOT.jar $APP_DIR/$APP
+
+#set the working directory
+WORKDIR $APP_DIR
+
+#kick off the micro service
+ENTRYPOINT ["java -Xmx64m -Xms8m -XX:+UseG1GC", "-jar", "lwcoedge-vn-sensing-0.0.1.jar"]

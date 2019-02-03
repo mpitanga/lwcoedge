@@ -1,0 +1,3 @@
+br\edu\ufrj\lwcoedge\instancecache\LwcoedgeVnInstancecacheApplication.class
+br\edu\ufrj\lwcoedge\instancecache\service\VNInstanceCacheService.class
+br\edu\ufrj\lwcoedge\instancecache\controler\VNInstanceCacheController.class

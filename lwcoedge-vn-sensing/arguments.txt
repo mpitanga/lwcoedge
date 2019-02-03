@@ -1,0 +1,6 @@
+windows
+--server.port=11001 --datasharing.port=10007 "--VN={\"id\":\"MPITANGADELL.UFRJ.UbicompLab.temperature\",\"datatype\":{\"id\":{\"where\":\"UFRJ\",\"who\":\"UbicompLab\",\"what\":\"temperature\"},\"description\":null,\"type\":\"SIMPLE\",\"element\":[{\"value\":\"DeviceID1\"}]},\"data\":{},\"neighbors\":[]}"
+
+linux
+java -jar lwcoedge-vn-sensing-0.0.1-SNAPSHOT.jar --server.port=11001 --datasharing.port=10007 --logging.file=./lwcoedge-vn-sensing.log
+--VN='{"id":"MPITANGADELL.UFRJ.UbicompLab.temperature","datatype":{"id":{"where":"UFRJ","who":"UbicompLab","what":"temperature"},"description":null,"type":"SIMPLE","element":[{"value":"DeviceID1"}]},"data":{},"neighbors":[]}'

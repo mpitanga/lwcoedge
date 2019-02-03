@@ -1,0 +1,3 @@
+br\edu\ufrj\lwcoedge\resourceprovisioner\LwcoedgeResourceprovisionerApplication.class
+br\edu\ufrj\lwcoedge\resourceprovisioner\controller\ResourceProvisionerController.class
+br\edu\ufrj\lwcoedge\resourceprovisioner\service\ResourceProvisionerService.class

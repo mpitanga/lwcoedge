@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Built-By: mpalv
+Build-Jdk: 10.0.2
+Implementation-Title: lwcoedge-vn-sensing
+Implementation-Version: 0.0.1-SNAPSHOT
+Implementation-Vendor-Id: lwcoedge
+Implementation-URL: https://projects.spring.io/spring-boot/#/spring-bo
+ ot-starter-parent/lwcoedge-vn-sensing
+Created-By: Maven Integration for Eclipse
+

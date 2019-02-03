@@ -1,0 +1,20 @@
+{
+	"id": "MPITANGADELL.UFRJ.UbicompLab.temperature",
+	"datatype": {
+		"id": {
+			"where": "UFRJ",
+			"who": "UbicompLab",
+			"what": "temperature"
+		},
+		"description": "Laboratory temperature in celsius",
+		"type": "SIMPLE",
+		"element": [
+			{
+				"value": "LM35DZ"
+			}
+		]
+	},
+	"data": {
+	},
+	"neighbors": []
+}
