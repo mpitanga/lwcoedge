@@ -4,11 +4,9 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpServerErrorException;
 
 import br.edu.ufrj.lwcoedge.core.interfaces.IRest;
 import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricIdentification;
@@ -18,12 +16,13 @@ import br.edu.ufrj.lwcoedge.core.util.Util;
 import br.edu.ufrj.lwcoedge.core.util.UtilMetric;
 
 @Service
-public class ApplicationAPIService extends AbstractService implements ApplicationRunner, IRest {
+public class ApplicationAPIService extends AbstractService implements IRest {
 
 	private String ResourceAllocator, ManagerApiUrl;
 	
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void appConfig(ApplicationArguments args) throws Exception {
+		this.getLogger().info("LW-CoEdge loading application settings...\n");
 		if (args != null && !args.getOptionNames().isEmpty()) {
 			try {
 				this.loadComponentsPort(args);
@@ -38,10 +37,13 @@ public class ApplicationAPIService extends AbstractService implements Applicatio
 		} else {
 			this.getLogger().info("No application settings founded!");
 			System.exit(0);
-		}		
+		}
+		this.getLogger().info("");
+		this.getLogger().info("LW-CoEdge application settings loaded.\n");
 	}
 
 	@Override
+	@Async("threadPoolTaskExecutor-API")
 	public void sendRequest(Request request, String... args) {
 		try {
 			final String startTime = LocalDateTime.now().toString();
@@ -70,15 +72,11 @@ public class ApplicationAPIService extends AbstractService implements Applicatio
 			}
 
 			try {
-				Util.callBack(request.getCallback(), new String()); // send an empty answer to the request issuer
+				Util.callBack(request.getCallback(), new String("ERROR")); // send an empty answer to the request issuer
 			} catch (Exception e1) {
-				new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-						Util.msg("[ERROR] ","The call for the Application failed!\n", e1.getMessage())
-				);
+				new Exception(Util.msg("[ERROR] ","The call for the Application failed!\n", e1.getMessage()));
 			}
-			new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("The call for the Resource Allocator failed!\n", e.getMessage())
-			);
+			new Exception(Util.msg("The call for the Resource Allocator failed!\n", e.getMessage()));
 		}
 	}
 
