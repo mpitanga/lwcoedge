@@ -279,6 +279,5 @@ public class ExperimentConfig implements Serializable {
 	public void setCollaboration(Collaboration collaboration) {
 		this.collaboration = collaboration;
 	}
-
 	
 }

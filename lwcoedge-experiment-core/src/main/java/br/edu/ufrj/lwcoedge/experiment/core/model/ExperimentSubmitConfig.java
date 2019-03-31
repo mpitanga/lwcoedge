@@ -14,6 +14,7 @@ public class ExperimentSubmitConfig implements Serializable {
     private boolean executeexperiment;
     private boolean generateresults;
     private boolean clearmetrics;
+	private String callback;
        
 	public ExperimentSubmitConfig() {}
 
@@ -101,8 +102,23 @@ public class ExperimentSubmitConfig implements Serializable {
 		this.clearmetrics = clearmetrics;
 	}
 
+	/**
+	 * @return the callback
+	 */
+	public String getCallback() {
+		return callback;
+	}
+
+	/**
+	 * @param callback the callback to set
+	 */
+	public void setCallback(String callback) {
+		this.callback = callback;
+	}
+
 	@Override
 	public String toString() {
 		return Util.obj2json(this);
 	}
+
 }
