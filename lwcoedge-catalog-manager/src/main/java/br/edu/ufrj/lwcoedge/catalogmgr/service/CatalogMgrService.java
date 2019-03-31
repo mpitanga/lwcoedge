@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.lang.annotation.Native;
 
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.edu.ufrj.lwcoedge.core.cache.Cache;
+import br.edu.ufrj.lwcoedge.core.interfaces.IAppConfig;
 import br.edu.ufrj.lwcoedge.core.interfaces.ICatalog;
 import br.edu.ufrj.lwcoedge.core.interfaces.IRegistry;
 import br.edu.ufrj.lwcoedge.core.interfaces.IVNCat;
@@ -19,7 +19,7 @@ import br.edu.ufrj.lwcoedge.core.service.AbstractService;
 import br.edu.ufrj.lwcoedge.core.util.Util;
 
 @Service
-public class CatalogMgrService extends AbstractService implements ApplicationRunner, IVNCat, ICatalog, IRegistry {
+public class CatalogMgrService extends AbstractService implements IAppConfig, IVNCat, ICatalog, IRegistry {
 
 	// This constant defines the amount of data types per edge node
 	@Native private static int MAX_ELEMENTS = 1000;
@@ -30,7 +30,7 @@ public class CatalogMgrService extends AbstractService implements ApplicationRun
     private Cache<String, Descriptor> cache = new Cache<String, Descriptor>(TIMETOLIVE, TIMEINTERVAL, MAX_ELEMENTS);
     
 	@Override
-	public void run(ApplicationArguments args) {
+	public void appConfig(ApplicationArguments args) {
 		if (args == null || args.getOptionNames().isEmpty()) {
 			this.getLogger().info("No descriptors repository found!");
 			System.exit(-1);

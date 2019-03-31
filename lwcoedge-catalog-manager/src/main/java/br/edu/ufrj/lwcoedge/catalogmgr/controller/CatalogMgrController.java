@@ -1,6 +1,8 @@
 package br.edu.ufrj.lwcoedge.catalogmgr.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +15,7 @@ import br.edu.ufrj.lwcoedge.core.model.Descriptor;
 
 @RestController
 @RequestMapping("/catalog")
-public class CatalogMgrController {
+public class CatalogMgrController implements ApplicationRunner{
 
 	@Autowired
 	CatalogMgrService service;
@@ -26,6 +28,11 @@ public class CatalogMgrController {
 	@GetMapping("/all")
 	public Object getAll() {
 		return service.getAll();
+	}
+
+	@Override
+	public void run(ApplicationArguments args) throws Exception {
+		service.appConfig(args);
 	}
 
 }
