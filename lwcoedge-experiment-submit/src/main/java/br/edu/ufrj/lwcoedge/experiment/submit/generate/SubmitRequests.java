@@ -57,16 +57,20 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 		String path = basePath+experimentName+"/";
 		String[] edgeNodes = config.getEdgenodes();
 
+		String urlCallBack = "http://192.168.237.127:8081/myapp/callback/result";
+		
 		boolean executeExperiment = config.isExecuteexperiment();
 		boolean clearMetrics = config.isClearmetrics();
 		boolean generateResults = config.isGenerateresults();
 
-		runExperiment(experimentName, path, edgeNodes, executeExperiment, clearMetrics, generateResults);
+		clearCacheMetrics(edgeNodes, "E0", -1);
+
+		runExperiment(experimentName, path, edgeNodes, executeExperiment, clearMetrics, generateResults, urlCallBack);
 
 	}
 
 	private void runExperiment(String experimentName, String path, String[] edgeNodes, 
-			boolean executeExperiment, boolean clearMetrics, boolean generateResults) {
+			boolean executeExperiment, boolean clearMetrics, boolean generateResults, String urlCallBack) {
 
 		if (!executeExperiment) {
 			this.getLogger().info("The execution of the Experiment is disabled!");
@@ -75,10 +79,12 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 		Boolean oldActivatecollaboration = null;
 		Boolean oldActivateDataSharing = null;
 		String oldExperimentCode = null;
+		
 		int oldIdxhost = -1;
+		
 		LocalDateTime startEx = LocalDateTime.now();
-		int timeSleep = 0;
-		int firstRequests = 0;
+		int timeSleep = 100;
+		//int firstRequests = 0;
 		try {
 			List<Requests> requests = service.getRequests(experimentName);
 			for (Requests request : requests) {
@@ -88,17 +94,12 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 					if (clearMetrics) {
 						
 						if (oldExperimentCode  != null) {
-							try {
-								if (generateResults) {
-									generateFileResults(path, edgeNodes, oldIdxhost);
-								}
-								this.getLogger().info("Waiting 5s to start a new experiment execution...");
-								Thread.sleep(5000);
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}						
+							if (generateResults) {
+								generateFileResults(path, edgeNodes, -1 /*oldIdxhost*/);
+							}
 						}
-						clearCacheMetrics(edgeNodes, request.getExperimentcode(), request.getIdxhost());
+						//clearCacheMetrics(edgeNodes, request.getExperimentcode(), request.getIdxhost());
+						clearCacheMetrics(edgeNodes, request.getExperimentcode(), -1);
 					}
 					oldExperimentCode = request.getExperimentcode();
 					oldIdxhost = request.getIdxhost();
@@ -116,7 +117,8 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 						activateDataSharing(edgeNodes, false, request.getIdxhost());
 					}
 				}
-				sendRequest(request);
+				sendRequest(request, urlCallBack);
+/*
 				if (++firstRequests > 100) {
 					if (timeSleep == 0) {
 						timeSleep = 2000; // wait 2s to dispatch the firsts requests
@@ -126,11 +128,12 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 				} else {
 					timeSleep = 50;
 				}
+*/				
 				Thread.sleep(timeSleep);
 			}
 			if (oldExperimentCode  != null) {
 				if (generateResults) {
-					generateFileResults(path, edgeNodes, oldIdxhost);
+					generateFileResults(path, edgeNodes, -1 /*oldIdxhost*/);
 				}
 			}
 		} catch (Exception e) {
@@ -149,30 +152,37 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 
 	}
 
-	private void sendRequest(Requests request) {
+	private void sendRequest(Requests request, String urlCallBack) {
 		try {				
-			new Thread(()->{
-				this.getLogger().info( Util.msg("Submitting -> ", request.getExperimentcode(), " - ", 
-						String.valueOf(request.getExperimentvar()), " of ", String.valueOf(request.getVariation())) );
-				this.getLogger().info(Util.msg("URL-> ",request.getUrl()));
-				this.getLogger().info(Util.msg("Request -> ", request.getRequest()));
-				HttpHeaders headers = Util.getDefaultHeaders();
-				headers.add("ExperimentID", Util.msg(request.getExperimentcode(), ".", String.valueOf(request.getVariation())));
-				headers.add("ExperimentVar", String.valueOf(request.getExperimentvar()));
-				try {
-					Util.sendRequest(request.getUrl(), headers, HttpMethod.POST, request.getRequest(), Void.class);
-				} catch (Exception e) {
-					this.getLogger().info(e.getCause().getMessage());
-					e.printStackTrace();
-				}
-				this.getLogger().info("Request submitted!");					
-			}).start();
+			this.getLogger().info( Util.msg("Submitting -> ", request.getExperimentcode(), " - ", 
+					String.valueOf(request.getExperimentvar()), " of ", String.valueOf(request.getVariation())) );
+			this.getLogger().info(Util.msg("URL-> ",request.getUrl()));
+			this.getLogger().info(Util.msg("Request -> ", request.getRequest()));
+			HttpHeaders headers = Util.getDefaultHeaders();
+			headers.add("ExperimentID", Util.msg(request.getExperimentcode(), ".", String.valueOf(request.getVariation())));
+			headers.add("ExperimentVar", String.valueOf(request.getExperimentvar()));
+			final String URL = (request.getUrl()==null) ? urlCallBack : request.getUrl(); 
+			try {
+				Util.sendRequest(URL, headers, HttpMethod.POST, request.getRequest(), Void.class);
+			} catch (Exception e) {
+				this.getLogger().info(e.getMessage());
+				e.printStackTrace();
+			}
+			this.getLogger().info("Request submitted!");					
 		} catch (Exception e) {
 			this.getLogger().info(e.getMessage());
 		}
 	}
 
 	private void generateFileResults(final String path, final String[] EdgeNodes, final int idxHost) {
+		try {
+			this.getLogger().info("Waiting 5s to start a new experiment execution...");
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		this.getLogger().info("-----------------------------------------------");
 		this.getLogger().info("Generating file with the experiments results...");
 		this.getLogger().info("-----------------------------------------------");
