@@ -11,14 +11,13 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class LwcoedgeApplicationApiApplication {
 
-	@Bean("threadPoolTaskExecutor-API")
+	@Bean("ProcessExecutor-API")
 	public TaskExecutor getAsyncExecutor() {
 		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 		executor.setCorePoolSize(5);
 		executor.setWaitForTasksToCompleteOnShutdown(true);
 		executor.setAwaitTerminationSeconds(300);
 		executor.setThreadNamePrefix("Async-API-");
-		executor.initialize();
 		return executor;
 	}
 

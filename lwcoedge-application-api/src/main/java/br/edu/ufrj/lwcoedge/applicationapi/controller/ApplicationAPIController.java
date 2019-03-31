@@ -35,7 +35,7 @@ public class ApplicationAPIController implements ApplicationRunner {
 			service.sendRequest(request, expID, var);
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
-					Util.msg("[ERROR] ", e.getCause().getMessage())
+					Util.msg("[ERROR] ", e.getMessage())
 				);
 		}
 	}
