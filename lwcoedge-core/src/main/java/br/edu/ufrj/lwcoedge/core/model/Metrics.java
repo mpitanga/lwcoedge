@@ -2,8 +2,6 @@ package br.edu.ufrj.lwcoedge.core.model;
 
 import java.io.Serializable;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import br.edu.ufrj.lwcoedge.core.util.Util;
 
 public class Metrics implements Serializable {
@@ -11,38 +9,14 @@ public class Metrics implements Serializable {
 	private static final long serialVersionUID = 8895472964458300832L;
 
 	private Integer mem;
-	private Integer memFree;
+	private Integer memUsed;
 	private Integer numberOfProcessors;
 	private Integer threads;
 	private Integer threadsTotal;
 	private Integer threadPeek;
-
-	@JsonIgnore
-	private boolean busy;
+	private boolean resourceBusy;
 	
-	public Metrics() {
-		this.busy = false;
-	}
-
-	/**
-	 * @param mem
-	 * @param memFree
-	 * @param numberOfProcessors
-	 * @param threads
-	 * @param threadsTotal
-	 * @param threadPeek
-	 */
-	public Metrics(Integer mem, Integer memFree, Integer numberOfProcessors, Integer threads, Integer threadsTotal,
-			Integer threadPeek) {
-		super();
-		this.mem = mem;
-		this.memFree = memFree;
-		this.numberOfProcessors = numberOfProcessors;
-		this.threads = threads;
-		this.threadsTotal = threadsTotal;
-		this.threadPeek = threadPeek;
-		this.busy = false;
-	}
+	public Metrics() {}
 
 	/**
 	 * @return the mem
@@ -56,20 +30,6 @@ public class Metrics implements Serializable {
 	 */
 	public void setMem(Integer mem) {
 		this.mem = mem;
-	}
-
-	/**
-	 * @return the memFree
-	 */
-	public Integer getMemFree() {
-		return memFree;
-	}
-
-	/**
-	 * @param memFree the memFree to set
-	 */
-	public void setMemFree(Integer memFree) {
-		this.memFree = memFree;
 	}
 
 	/**
@@ -131,16 +91,8 @@ public class Metrics implements Serializable {
 	/**
 	 * @return the busy
 	 */
-	@JsonIgnore
 	public boolean isResourceBusy() {
-		return busy;
-	}
-
-	/**
-	 * @param busy the busy to set
-	 */
-	public void setBusy(boolean busy) {
-		this.busy = busy;
+		return this.resourceBusy;
 	}
 
 	/* (non-Javadoc)
@@ -149,6 +101,27 @@ public class Metrics implements Serializable {
 	@Override
 	public String toString() {
 		return Util.obj2json(this);
+	}
+
+	/**
+	 * @return the memUsed
+	 */
+	public Integer getMemUsed() {
+		return memUsed;
+	}
+
+	/**
+	 * @param memUsed the memUsed to set
+	 */
+	public void setMemUsed(Integer memUsed) {
+		this.memUsed = memUsed;
+	}
+
+	/**
+	 * @param resourceBusy the resourceBusy to set
+	 */
+	public void setResourceBusy(boolean resourceBusy) {
+		this.resourceBusy = resourceBusy;
 	}
 	
 }

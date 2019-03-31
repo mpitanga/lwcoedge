@@ -21,9 +21,7 @@ public class EndDevice extends AbstractDevice implements Serializable {
 	
 	public EndDevice(String hostName) {
 		super(hostName);
-		new Thread(()-> {
-			this.run();
-		}).start();
+		this.run();
 	}
 
 	private Integer getRamdomValue() {
@@ -52,7 +50,7 @@ public class EndDevice extends AbstractDevice implements Serializable {
 	// Direct access
 	public Data getData() {
 		try {
-			Thread.sleep(10);
+			Thread.sleep(30);
 			this.generateRandomData();
 			return this.data;
 		} catch (InterruptedException e) {
@@ -108,16 +106,18 @@ public class EndDevice extends AbstractDevice implements Serializable {
 	}
 
 	//Simulates the device sending his sensing data to the internal database..
-	public void run() {
-		while (true) {
-			this.generateRandomData();
-			this.logger.info("Sending data ["+data.toString()+" to the internal database...");
-			try {
-				Thread.sleep(this.interval);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+	private void run() {
+		new Thread(() -> {
+			while (!Thread.currentThread().isInterrupted()) {
+				this.generateRandomData();
+				this.logger.info("Sending data ["+data.toString()+" to the internal database...");
+				try {
+					Thread.sleep(this.interval);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}			
 			}			
-		}
+		}).start();
 	}
 
 /*

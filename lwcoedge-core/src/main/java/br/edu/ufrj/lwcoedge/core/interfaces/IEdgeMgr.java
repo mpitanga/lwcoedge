@@ -6,7 +6,7 @@ import br.edu.ufrj.lwcoedge.core.model.EdgeNode;
 import br.edu.ufrj.lwcoedge.core.model.Resources;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
 
-public interface IEdgeMgr {
+public interface IEdgeMgr extends IAppConfig {
 
 	public boolean hasResource(Datatype datatype, String... args) throws Exception;
 	public boolean hasConnectedDevices(Descriptor datatype, String... args);
