@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -41,12 +41,11 @@ import br.edu.ufrj.lwcoedge.experiment.core.model.MetricCTAndAmount;
 import br.edu.ufrj.lwcoedge.experiment.graph.CSVFile;
 
 @Component
-public class Experiment0 extends AbstractService implements ApplicationRunner {
+public class Experiment0 extends AbstractService  {
 
 	@Autowired
 	private CSVFile csv;
 
-	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		
 		this.getLogger().info("Loading the LW-CoEdge experiment settings...");
@@ -78,7 +77,7 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 		String[] datatypeids = config.getDatatypeids();
 		int idxdatatype = config.getIdxdatatype();
 		Collaboration collabActivated = config.getCollaboration();
-		
+				
 		if (collabActivated == null) {
 			this.getLogger().info( "The parameter [Collaboration] was not configured!" );
 			System.exit(1);
@@ -140,20 +139,14 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 				String experimentCode = "E"+idx;
 
 				if (clearMetrics) {
-					clearCacheMetrics(EdgeNodes, experimentCode, idxHost);
+					clearCacheMetrics(EdgeNodes, experimentCode, -1/*idxHost*/);
 				}
 
 				// alterar para o nome do experimento variar de acordo com X...E1,E2,E3...
 				startExperiment1(EdgeNodes, EntryPointPort, callBackURL, experimentCode, cycles, requestVariation, datatypeIds, maxfreshness,
 						maxresponsetime, randomFreshness, idxHost, idxdatatype, totalOfRequests, collabActivated);
-				try {
-					if (generateResults) {
-						generateFileResults(path, EdgeNodes, idxHost);
-					}
-					this.getLogger().info("Waiting 5s to start a new experiment execution...");
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+				if (generateResults) {
+					generateFileResults(path, EdgeNodes, -1/*idxHost*/);
 				}
 			}
 			LocalDateTime finishEx = LocalDateTime.now();
@@ -166,6 +159,10 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 			this.getLogger().info("Time elapsed (ms)  -> "+d.toMillis());
 			this.getLogger().info("----------------------------------");
 
+		} else {
+			if (generateResults) {
+				generateFileResults(path, EdgeNodes, idxHost);
+			}
 		}
 /*		if (generateResults) {
 			for (String en : EdgeNodes) {				
@@ -179,10 +176,12 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 */
 	}
 
+	@Async("threadPoolTaskExecutor_Experiment")
 	private void startExperiment1(String[] EdgeNodes, String lwcoedgeHostPort, String callBackURL,
 			String experiment, int cycles, int requestVariation, String[] datatypeIds, 
 			int maxFreshness, int maxResponsetime, boolean randomFreshness, 
-			int idxHost, int idxdatatype, int[] totalOfRequests, Collaboration collabActivated) {
+			int idxHost, int idxdatatype, int[] totalOfRequests, 
+			Collaboration collabActivated) {
 		
 		LocalDateTime startEx = LocalDateTime.now();
 
@@ -214,8 +213,8 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 				this.getLogger().info(e.getMessage());
 			}
 			try {
-				this.getLogger().info("Waiting 2s to start a new cycle...");
-				Thread.sleep(2000);
+				this.getLogger().info("Waiting 5s to start a new cycle...");
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -254,7 +253,7 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 					}					
 				}
 				
-				Thread t = new Thread(()->{
+//				Thread t = new Thread(()->{
 					String hostIP = (idxHost == -1) 
 							? EdgeNodes[generateNumber(0, EdgeNodes.length)]
 							: EdgeNodes[idxHost];
@@ -275,11 +274,11 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 						e.printStackTrace();
 					}
 					this.getLogger().info("Request submitted!");					
-				});
-				t.start();
-				if (i>0) {
-					Thread.sleep(100);
-				}
+//				});
+//				t.start();
+//				if (i>0) {
+//					Thread.sleep(50);
+//				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -296,6 +295,13 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 	}
 
 	private void generateFileResults(final String path, final String[] EdgeNodes, final int idxHost) {
+		this.getLogger().info("Waiting 5s to start a new experiment execution...");
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		this.getLogger().info("-----------------------------------------------");
 		this.getLogger().info("Generating file with the experiments results...");
 		this.getLogger().info("-----------------------------------------------");
@@ -311,7 +317,7 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void saveResults(String host, String path) {
-		try {		
+		try {
 			ResponseEntity<ArrayList> httpResp = Util.sendRequest( Util.msg("http://", host, ":10500/lwcoedgemgr/metrics/results/keys"), 
 					Util.getDefaultHeaders(), HttpMethod.GET, null, ArrayList.class);
 			ArrayList<String> keys = httpResp.getBody();
@@ -320,6 +326,7 @@ public class Experiment0 extends AbstractService implements ApplicationRunner {
 				ResponseEntity<String> keyContent = Util.sendRequest( Util.msg("http://", host, ":10500/lwcoedgemgr/metrics/results/keys/",key), 
 						Util.getDefaultHeaders(), HttpMethod.GET, null, String.class);
 				try {
+					this.getLogger().info( Util.msg("Body: ", keyContent.getBody()));
 					//E1.200-M9
 					String[] splitKey = key.split("\\.");
 					String pathExperiment = Util.msg(path, splitKey[0], "/");
