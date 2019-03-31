@@ -3,6 +3,8 @@ package br.edu.ufrj.lwcoedge.edgenodemgr.controller;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +24,7 @@ import br.edu.ufrj.lwcoedge.edgenodemgr.service.EdgeNodeManagerService;
 
 @RestController
 @RequestMapping("/edgenodemanager")
-public class EdgeNodeManagerController {
+public class EdgeNodeManagerController implements ApplicationRunner {
 
 	@Autowired
 	EdgeNodeManagerService service;
@@ -50,7 +52,8 @@ public class EdgeNodeManagerController {
 			final String experimentID = httpRequest.getHeader("ExperimentID");
 			return service.containerDeploy(datatype, RequestID, startDateTime, experimentID);
 		} catch (Exception e) {
-			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
+					Util.msg("The container was not deployed. Cause: ",e.getMessage()));
 		}
 	}
 	
@@ -92,6 +95,11 @@ public class EdgeNodeManagerController {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
 					Util.msg("The new edge node configuration not loaded. Cause: ",e.getMessage()));
 		}
+	}
+
+	@Override
+	public void run(ApplicationArguments args) throws Exception {
+		service.appConfig(args);
 	}
 
 }

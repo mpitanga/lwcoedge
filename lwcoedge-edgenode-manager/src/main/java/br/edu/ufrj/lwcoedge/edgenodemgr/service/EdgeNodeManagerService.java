@@ -8,8 +8,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -33,18 +34,19 @@ import br.edu.ufrj.lwcoedge.core.model.ResourcesAvailable;
 import br.edu.ufrj.lwcoedge.core.model.Type;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
 import br.edu.ufrj.lwcoedge.core.service.AbstractService;
+import br.edu.ufrj.lwcoedge.core.service.SendMetricService;
 import br.edu.ufrj.lwcoedge.core.util.Util;
-import br.edu.ufrj.lwcoedge.core.util.UtilMetric;
 import br.edu.ufrj.lwcoedge.edgenodemgr.config.ConfigEdgenode;
 import br.edu.ufrj.lwcoedge.edgenodemgr.config.ConfigNeededResources;
 
 @Service
-public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr, ApplicationRunner {
+@ComponentScan("br.edu.ufrj.lwcoedge.core")
+public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr {
 
 	private NeededResourcesCache neededRes = new NeededResourcesCache();
 	private ConfigEdgenode configEdgenode;
 	
-	private String CatalogMgrUrl, ManagerApiUrl;
+	private String catalogMgrUrl, managerApiUrl;
 	
 	private String fileName = null;
 
@@ -60,8 +62,12 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr,
 	// Key - Value
     private Cache<String, Descriptor> cacheDescriptor = new Cache<String, Descriptor>(TIMETOLIVE, TIMEINTERVAL, MAX_ELEMENTS2);
 
+    @Autowired
+    SendMetricService metricService;
+    
 	@Override
-	public void run(ApplicationArguments args) {
+	public void appConfig(ApplicationArguments args) {
+		this.getLogger().info("LW-CoEdge loading application settings...\n");
 		if (args != null && !args.getOptionNames().isEmpty()) {
 			try {
 				this.loadComponentsPort(args);
@@ -69,10 +75,10 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr,
 				this.loadNeededResources(args);
 				this.loadEdgenodeConfig(args);
 
-				this.CatalogMgrUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_catalog_manager(), "/catalog");
-				this.ManagerApiUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
-				this.getLogger().info( Util.msg("CatalogMgrUrl cache url = ", this.CatalogMgrUrl));
-				this.getLogger().info( Util.msg("ManagerApi cache url = ", this.ManagerApiUrl));
+				this.catalogMgrUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_catalog_manager(), "/catalog");
+				this.managerApiUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
+				this.getLogger().info( Util.msg("CatalogMgrUrl cache url = ", this.catalogMgrUrl));
+				this.getLogger().info( Util.msg("ManagerApi cache url = ", this.managerApiUrl));
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.exit(-1);
@@ -81,7 +87,8 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr,
 			this.getLogger().info("No application settings founded!");
 			System.exit(-1);
 		}
-
+		this.getLogger().info("");
+		this.getLogger().info("LW-CoEdge application settings loaded.\n");
 	}
 
 	@Override
@@ -152,16 +159,10 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr,
 			if (args.length > 0 ) {
 				LocalDateTime finishDeploy = LocalDateTime.now();
 				MetricIdentification requestID = new MetricIdentification(args[0]);
-				MetricIdentification id = new MetricIdentification(requestID.getExperiment(), "DEPLOY", null, datatype.getId());
-
-				this.getLogger().info( Util.msg("Sending metric [", id.toString(), "] to registry! "));
-				try {
-					UtilMetric.sendMetricComputationalTime(this.ManagerApiUrl, id.getKey(), id.toString(), startDeploy, finishDeploy);					
-				} catch (Exception e) {
-					this.getLogger().info( 
-							Util.msg("[ERROR] ","Error submitting the metric [", id.toString(), "] to the registry. ", e.getMessage())
-					);
-				}
+				
+				this.getLogger().info( Util.msg("Sending metric [DEPLOY] to registry! "));
+				metricService.sendMetricComputationalTime(this.managerApiUrl, requestID.getExperiment(), "DEPLOY", datatype.getId(), 
+							startDeploy, finishDeploy);
 			}
 
 			this.getLogger().info("Virtual Node deployed!");
@@ -194,6 +195,7 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr,
 
 	@Override
 	public boolean scaleUp(VirtualNode vn, String... args) {
+/*		
 		// docker update -m 256M [container id]
 		Long mem = this.neededRes.get(vn.getDatatype().getType().toString()).getPhysicalMemorySize();
 		String unit = this.neededRes.get(vn.getDatatype().getType().toString()).getUnit();
@@ -205,6 +207,8 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr,
 		} catch (Exception e) {
 			return false;			
 		} 
+*/
+		return false; //simulate a container without resources
 	}
 
 	@Override
@@ -335,7 +339,7 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr,
 		// it is not in the cache
 		if (dtDescriptor == null) {
 			ResponseEntity<Descriptor> httpResp = 
-					Util.sendRequest( Util.msg(this.CatalogMgrUrl, "/descriptor"), Util.getDefaultHeaders(), HttpMethod.POST, datatype, Descriptor.class);
+					Util.sendRequest( Util.msg(this.catalogMgrUrl, "/descriptor"), Util.getDefaultHeaders(), HttpMethod.POST, datatype, Descriptor.class);
 
 			if (httpResp.hasBody()) {
 				dtDescriptor = httpResp.getBody();
@@ -393,4 +397,20 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr,
 		this.getLogger().info("Configuration finished.");
 	}
 
+/*	public static void main(String[] args) {
+		String fileName = "F:\\thesis\\workspace_lwcoedge\\lwcoedge-edgenode-manager\\lwcoedge-edgenodeconfig.json";
+		ObjectMapper objectMapper = new ObjectMapper();
+		ConfigEdgenode configEdgenode;
+		try {
+			configEdgenode = objectMapper.readValue(new File(fileName), ConfigEdgenode.class);
+			System.out.println(configEdgenode.toString());
+		} catch (JsonParseException e) {
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+*/
 }
