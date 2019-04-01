@@ -1,6 +1,5 @@
 package br.edu.ufrj.lwcoedge.resourceprovisioner.service;
 
-import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -282,7 +281,7 @@ public class ResourceProvisionerService extends AbstractService implements IProv
 			MetricIdentification id = 
 					new MetricIdentification(idOld.getExperiment(), "TIME_SPENT_FW", idOld.getVariation(), request.getDatatype().getId());
 			headers.put("RequestID", id.toString()); //a new RequestID is defined before sending the request to collaboration
-			headers.put("StartCommDateTime", LocalDateTime.now().toString()); //Starting Communication date and time
+			headers.put("StartComm", "1"); //Flag to indicate the beginning of P2P Communication
 			try {
 				this.getLogger().info(
 						Util.msg("Invoking P2P collaboration for the request [", headers.get("RequestID"), "]! StartDatetime = ", headers.get("StartDateTime"),"\n")
