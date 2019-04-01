@@ -2,6 +2,12 @@ package br.edu.ufrj.lwcoedge.core.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import br.edu.ufrj.lwcoedge.core.util.Util;
 
@@ -12,7 +18,6 @@ public class EdgeNode implements Serializable {
 	private String hostName;
 	private String ip;
 	private String coordinates;
-
 	private ArrayList<ConnectedDevices> connectedDevices = new ArrayList<ConnectedDevices>();
 	private ArrayList<EdgeNode> neighborhood = new ArrayList<EdgeNode>();
 	
@@ -56,6 +61,21 @@ public class EdgeNode implements Serializable {
 
 	public void setNeighborhood(ArrayList<EdgeNode> neighborhood) {
 		this.neighborhood = neighborhood;
+	}
+
+	@JsonIgnore
+	public boolean hasConnectedDevices(Descriptor datatype) {
+		if (datatype.getType() == Type.COMPLEX)
+			return true;
+
+		Function<ConnectedDevices,List<String>> deviceKey=p -> Arrays.asList(p.getValue());
+		Function<Element,List<String>> elementKey=p -> Arrays.asList(p.getValue());
+
+		boolean exists=
+				datatype.getElement().stream().map(elementKey)
+				.anyMatch(this.getConnectedDevices().stream().map(deviceKey).collect(Collectors.toSet())::contains);
+
+		return exists;
 	}
 
 	/* (non-Javadoc)
