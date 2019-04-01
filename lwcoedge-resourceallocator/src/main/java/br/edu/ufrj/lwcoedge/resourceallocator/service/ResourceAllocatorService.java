@@ -2,42 +2,48 @@ package br.edu.ufrj.lwcoedge.resourceallocator.service;
 
 import java.util.LinkedHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import br.edu.ufrj.lwcoedge.core.interfaces.IRequest;
-import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricIdentification;
 import br.edu.ufrj.lwcoedge.core.model.Metrics;
 import br.edu.ufrj.lwcoedge.core.model.Request;
 import br.edu.ufrj.lwcoedge.core.model.ResourceProvisioningParams;
 import br.edu.ufrj.lwcoedge.core.model.Type;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
 import br.edu.ufrj.lwcoedge.core.service.AbstractService;
+import br.edu.ufrj.lwcoedge.core.service.SendMetricService;
 import br.edu.ufrj.lwcoedge.core.util.Util;
-import br.edu.ufrj.lwcoedge.core.util.UtilMetric;
 
 @Service
-public class ResourceAllocatorService extends AbstractService implements ApplicationRunner, IRequest {
+@ComponentScan("br.edu.ufrj.lwcoedge.core")
+public class ResourceAllocatorService extends AbstractService implements IRequest {
 
-	private String VNInstanceCacheUrl, ResourceProvisionerUrl, MonitorUrl, ManagerApiUrl;
+	@Autowired
+	SendMetricService metricService;
+	
+	private String vnInstanceCacheUrl, resourceProvisionerUrl, monitorUrl, managerApiUrl;
 	
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void appConfig(ApplicationArguments args) throws Exception {
+		this.getLogger().info("LW-CoEdge loading application settings...\n");
 		if (args != null && !args.getOptionNames().isEmpty()) {
 			try {
 				this.loadComponentsPort(args);
 
-				this.VNInstanceCacheUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_vn_instancecache(), "/vninstancecache/search");
-				this.ResourceProvisionerUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_resourceprovisioner(), "/resourceprovisioner/provisioning");
-				this.MonitorUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_monitor(), "/monitor/vn/metrics");
-				this.ManagerApiUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
+				this.vnInstanceCacheUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_vn_instancecache(), "/vninstancecache/search");
+				this.resourceProvisionerUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_resourceprovisioner(), "/resourceprovisioner/provisioning");
+				this.monitorUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_monitor(), "/monitor/vn/metrics");
+				this.managerApiUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
 
-				this.getLogger().info( Util.msg("VNInstance cache url = ", this.VNInstanceCacheUrl) );
-				this.getLogger().info( Util.msg("Resource provisioner url = ",this.ResourceProvisionerUrl) );
-				this.getLogger().info( Util.msg("Monitor url = ", this.MonitorUrl) );
+				this.getLogger().info( Util.msg("VNInstance cache url = ", this.vnInstanceCacheUrl) );
+				this.getLogger().info( Util.msg("Resource provisioner url = ",this.resourceProvisionerUrl) );
+				this.getLogger().info( Util.msg("Monitor url = ", this.monitorUrl) );
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -47,20 +53,11 @@ public class ResourceAllocatorService extends AbstractService implements Applica
 			this.getLogger().info("No application settings founded!");
 			System.exit(-1);
 		}		
-	}
-
-	private void registerRequestSizeMetric(MetricIdentification id, Long valueOf) throws Exception {
-		new Thread(()-> {
-			//Bandwidth consumed
-			try {
-				UtilMetric.sendMetricSummaryValue(this.ManagerApiUrl, id.getKey(), id.toString(), valueOf);
-			} catch (Exception e) {
-				String msg = Util.msg("[ERROR] ","Error submitting the metric [", id.toString(), "] to the registry.", e.getMessage());
-				this.getLogger().info(msg);
-			}
-		}).start();
+		this.getLogger().info("");
+		this.getLogger().info("LW-CoEdge application settings loaded.\n");
 	}
 	
+	@Async("ProcessExecutor-allocator")
 	@Override
 	public void handleRequest(Request request, String... args) throws Exception {
 		LinkedHashMap<String, String> headers = new LinkedHashMap<String, String>();
@@ -71,58 +68,50 @@ public class ResourceAllocatorService extends AbstractService implements Applica
 			headers.put("StartDateTime", args[1]);
 			headers.put("ExperimentID", args[2]);
 			headers.put("RequestSize", args[3]);
+			headers.put("TimeSpentWithP2P", Long.toString(0l));				
 			if (args.length>4) {
 				headers.put("StartCommDateTime", args[4]);
 				headers.put("StartP2PDateTime", args[5]);
 				headers.put("CommLatency", args[6]);
+				headers.put("TimeSpentWithP2P", args[7]);				
 			}
-			if (args.length==7) {
+			if (args.length==8) {
 				this.getLogger().info("Request received from the P2P collaboration!");
-				this.getLogger().info( Util.msg("Request ", headers.get("RequestID")," size = ", headers.get("RequestSize")) );
 				if (sendMetricEnable) {
-					try {
-						MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_REQSENT_NB_0", null, request.getDatatype().getId());
-						Long valueOf = Long.valueOf(headers.get("RequestSize"));
-						registerRequestSizeMetric(id, valueOf);
-					} catch (Exception e) {
-						this.getLogger().info(e.getMessage());
-					}					
+					Long valueOf = Long.valueOf(headers.get("RequestSize"));
+					metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_REQSENT_NB_0", request.getDatatype().getId(), valueOf);
 				}
-
 			} else {
 				//(request received).
+				this.getLogger().info("Request received from the Application manager (APPMgr)!");
 				if (sendMetricEnable) {
-					try {
-						MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_REQREC_APP", null, request.getDatatype().getId());
-						Long valueOf = Long.valueOf(headers.get("RequestSize"));
-						registerRequestSizeMetric(id, valueOf);
-					} catch (Exception e) {
-						this.getLogger().info(e.getMessage());
-					}					
+					Long valueOf = Long.valueOf(headers.get("RequestSize"));
+					metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_REQREC_APP", request.getDatatype().getId(), valueOf);
 				}
 			}
-			this.getLogger().info( Util.msg("Request [", headers.get("RequestID"), "] submitted to process in ", headers.get("StartDateTime")));
 		}
+		this.getLogger().info( 
+			Util.msg("Request [", headers.get("RequestID"),
+				" size = [", headers.get("RequestSize"),
+				"] submitted to process in ", headers.get("StartDateTime"),
+				" - Processing time (with P2P) = ", headers.get("TimeSpentWithP2P")
+			)
+		);
+
 		VirtualNode vn = null;
 		ResponseEntity<VirtualNode> httpRespVN;
 		try {
-			httpRespVN = Util.sendRequest(this.VNInstanceCacheUrl, 
+			httpRespVN = Util.sendRequest(this.vnInstanceCacheUrl, 
 					Util.getDefaultHeaders(headers), HttpMethod.POST, request.getDatatype(), VirtualNode.class);
 			if (httpRespVN.hasBody()) {
 				vn = httpRespVN.getBody();
 
 				if (sendMetricEnable) {
 					//data consumed to received the answer
-					try {
-						MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_RESP_VNCACHE", null, request.getDatatype().getId());
-						Long valueOf = Util.getObjectSize(httpRespVN.getHeaders()) +
-								Util.getObjectSize(httpRespVN.getBody());
-						registerRequestSizeMetric(id, valueOf);
-					} catch (Exception e) {
-						this.getLogger().info(e.getMessage());
-					}					
+					Long valueOf = Util.getObjectSize(httpRespVN.getHeaders()) +
+							Util.getObjectSize(httpRespVN.getBody());
+					metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_RESP_VNCACHE", request.getDatatype().getId(), valueOf);
 				}
-
 			}
 		} catch (Exception e1) {
 			String msg = Util.msg("[ERROR] ", "The invocation of the Virtual Node instance cache generated an error!!\n", e1.getMessage());
@@ -135,74 +124,69 @@ public class ResourceAllocatorService extends AbstractService implements Applica
 			paramRP.setCurrentVirtualNode(null);
 			paramRP.setRequest(request);
 			try {
-				httpRespVN = Util.sendRequest(this.ResourceProvisionerUrl,
+				httpRespVN = Util.sendRequest(this.resourceProvisionerUrl,
 						Util.getDefaultHeaders(headers), HttpMethod.POST, paramRP, VirtualNode.class);
 				vn = (httpRespVN.hasBody()) ? httpRespVN.getBody() : null;
 
 				if (vn != null && sendMetricEnable) {
 					//Bandwidth consumed to received the answer
-					try {
-						MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_RESP_DEPLOY", null, request.getDatatype().getId());
-						Long valueOf = Util.getObjectSize(httpRespVN.getHeaders()) +
-								Util.getObjectSize(httpRespVN.getBody());
-						registerRequestSizeMetric(id, valueOf);
-					} catch (Exception e) {
-						this.getLogger().info(e.getMessage());
-					}					
+					Long valueOf = Util.getObjectSize(httpRespVN.getHeaders()) +
+							Util.getObjectSize(httpRespVN.getBody());
+					metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_RESP_DEPLOY", request.getDatatype().getId(), valueOf);
 				}
 			} catch (Exception e) {
-				String msg = Util.msg("[ERROR] ","The invocation of the Resource Provisioner generated an error!\n", e.getMessage());
+				String msg = Util.msg("[ERROR] ","The invocation of the Resource Provisioner generated an error! ", e.getMessage());
 				this.getLogger().info(msg);
 				throw new Exception(msg);
 			}
 		} else {
-			this.getLogger().info("Invoking Monitor component to get metrics...");
+			//this.getLogger().info("Invoking Monitor component to get metrics...");
 			// Getting runtime metrics' object from the selected Virtual Node
 			Metrics metrics;
 			try {
 				ResponseEntity<Metrics> httpRespMetrics = 
-					Util.sendRequest(this.MonitorUrl, Util.getDefaultHeaders(), HttpMethod.POST, vn, Metrics.class);
+					Util.sendRequest(this.monitorUrl, Util.getDefaultHeaders(), HttpMethod.POST, vn, Metrics.class);
 				if (httpRespMetrics.hasBody()) {
 					metrics = httpRespMetrics.getBody();
 					
 					if (sendMetricEnable) {
 						//data consumed to received the answer
-						try {
-							MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_RESP_MONITOR", null, request.getDatatype().getId());
-							Long valueOf = Util.getObjectSize(httpRespMetrics.getHeaders()) +
-									Util.getObjectSize(httpRespMetrics.getBody());
-							registerRequestSizeMetric(id, valueOf);
-						} catch (Exception e) {
-							this.getLogger().info(e.getMessage());
-						}					
+						Long valueOf = Util.getObjectSize(httpRespMetrics.getHeaders()) +
+								Util.getObjectSize(httpRespMetrics.getBody());
+						metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_RESP_MONITOR", request.getDatatype().getId(), valueOf);
 					}
-
 				}
 				else
 					metrics = new Metrics();
 			} catch (Exception e) {
 				metrics = new Metrics();
+				this.getLogger().info( Util.msg("[ERROR] Accessing the monitor. ", e.getMessage()) );
 			}
+
 			if (metrics.isResourceBusy()) {
-				this.getLogger().info("Invoking Resource provisioner to scale-up the VN container...");
+//				this.getLogger().info( Util.msg("VirtualNodeMetrics : ", metrics.toString()));
+				this.getLogger().info( Util.msg("Invoking Resource provisioner to scale-up the VN container[",vn.getId(),"...",
+						" Request [", args[0], "] StartDatetime= ", args[1])
+				);
+				
 				// Scale-up the Virtual Node container
 				ResourceProvisioningParams paramRP = new ResourceProvisioningParams();
 				paramRP.setCurrentVirtualNode(vn);
 				paramRP.setRequest(request);
 				try {
-					httpRespVN = Util.sendRequest(this.ResourceProvisionerUrl,
+					httpRespVN = Util.sendRequest(this.resourceProvisionerUrl,
 						Util.getDefaultHeaders(headers), HttpMethod.POST, paramRP, VirtualNode.class);
+					
+					if (!httpRespVN.hasBody()) {
+						this.getLogger().info(Util.msg("[No scale-up] The request [",  headers.get("RequestID"), "] was submitted to the collaboration process!"));
+						return;
+					}
 					
 					if (sendMetricEnable) {
 						//data consumed to received the answer
-						try {
-							MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_RESP_SCALEUP", null, request.getDatatype().getId());
-							Long valueOf = Util.getObjectSize(httpRespVN.getHeaders()) +
-									Util.getObjectSize(httpRespVN.getBody());
-							registerRequestSizeMetric(id, valueOf);
-						} catch (Exception e) {
-							this.getLogger().info(e.getMessage());
-						}					
+						Long valueOf = Util.getObjectSize(httpRespVN.getHeaders()) +
+								Util.getObjectSize(httpRespVN.getBody());
+						metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_RESP_SCALEUP", request.getDatatype().getId(), valueOf);
 					}
 
 				} catch (Exception e) {
@@ -250,13 +234,8 @@ public class ResourceAllocatorService extends AbstractService implements Applica
 		}
 
 		if (headers.size() > 0) {
-			MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "REQ_MET", null, request.getDatatype().getId());
-			try {
-				UtilMetric.sendMetric(this.ManagerApiUrl, id.getKey(), id.toString(), 1);
-			} catch (Exception e) {
-				String msg = Util.msg("[ERROR] ","Error submitting the metric [", id.toString(), "] to the registry.", e.getMessage());
-				this.getLogger().info(msg);
-			}
+			metricService.sendMetric(this.managerApiUrl, headers.get("ExperimentID"), "REQ_MET", request.getDatatype().getId());
 		}
 	}
+
 }
