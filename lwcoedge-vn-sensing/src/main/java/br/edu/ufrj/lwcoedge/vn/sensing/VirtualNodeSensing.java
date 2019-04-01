@@ -6,15 +6,14 @@ import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
-import br.edu.ufrj.lwcoedge.core.interfaces.INeighbor;
-import br.edu.ufrj.lwcoedge.core.interfaces.IReceive;
-import br.edu.ufrj.lwcoedge.core.interfaces.IRequest;
-import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricIdentification;
 import br.edu.ufrj.lwcoedge.core.model.ComponentsPort;
 import br.edu.ufrj.lwcoedge.core.model.Data;
 import br.edu.ufrj.lwcoedge.core.model.DataSharing;
@@ -23,15 +22,23 @@ import br.edu.ufrj.lwcoedge.core.model.Element;
 import br.edu.ufrj.lwcoedge.core.model.Request;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
 import br.edu.ufrj.lwcoedge.core.model.devices.simulation.EndDevice;
+import br.edu.ufrj.lwcoedge.core.service.AsyncService;
+import br.edu.ufrj.lwcoedge.core.service.SendMetricService;
 import br.edu.ufrj.lwcoedge.core.util.Util;
-import br.edu.ufrj.lwcoedge.core.util.UtilMetric;
 import br.edu.ufrj.lwcoedge.core.vn.AbstractVirtualNode;
 
 @Service
-public class VirtualNodeSensing extends AbstractVirtualNode implements ApplicationRunner, IRequest, INeighbor, IReceive {
+@ComponentScan("br.edu.ufrj.lwcoedge.core")
+public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensingService {
 
 	private static final long serialVersionUID = 4464325065673170719L;
 
+	@Autowired
+	AsyncService asyncService;
+	
+	@Autowired
+	SendMetricService metricService;
+	
 	// used by end device tier access simulation
 	private ArrayList<EndDevice> endDevices = new ArrayList<EndDevice>();
 
@@ -39,11 +46,9 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements Applicati
 		
 	/*
 	 * We need to get the parameters when the container is to start.
-	 * (non-Javadoc)
-	 * @see org.springframework.boot.ApplicationRunner#run(org.springframework.boot.ApplicationArguments)
 	 */
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void appConfig(ApplicationArguments args) throws Exception {
 		// Initializing the Virtual Node object when the service (or container) is started.
 		if (args == null || args.getOptionNames().isEmpty()) {
 			return;
@@ -81,13 +86,8 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements Applicati
 	
 	@Override
 	public void start() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Initializing ").append(this.getName());
-		sb.append(" [").append(this.getVn().getId()).append("]");
-		sb.append(" [Port=").append(this.getVn().getPort()).append("]...");
-
 		this.getLogger().info("-------------");
-		this.getLogger().info(sb.toString());
+		this.getLogger().info(Util.msg("Initializing ",this.getName()," [",this.getVn().getId(),"] [Port=",this.getVn().getPort().toString(),"]..."));
 
 		this.getLogger().info("Establishing communication with the end devices...");
 		for (Element element : this.getVn().getDatatype().getElement()) {
@@ -128,6 +128,11 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements Applicati
 	}
 	
 	@Override
+	public VirtualNode getVn() {
+		return super.getVn();
+	}
+	
+	@Override
 	public void handleRequest(Request request, String... args) throws Exception {
 		LocalDateTime ldtRequest;
 
@@ -137,14 +142,19 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements Applicati
 		headers.put("StartDateTime", args[1]);
 		headers.put("ExperimentID", args[2]);
 		headers.put("CommLatency", args[3]);
-
+		headers.put("RequestSize", args[4]);
+		headers.put("TimeSpentWithP2P", args[5]);
+		
 		// if the Proof-of-Concept sends the request, then allow the metric registration.
 		final boolean sendMetric = !args[2].equals("R");
 		
 		this.getLogger().info( "--------------------------------------------------------");
 		this.getLogger().info( Util.msg(
 				"Virtual Node received a request [", headers.get("RequestID"), 
-				"]! Request time: ",headers.get("StartDateTime")));
+				"]! Request time: ",headers.get("StartDateTime"),
+				" TimeSpentWithP2P: ", headers.get("TimeSpentWithP2P")
+				)
+		);
 		ldtRequest  = LocalDateTime.parse(args[1]);
 
 		boolean sendfreshData = false;
@@ -196,26 +206,13 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements Applicati
 						
 						sendfreshData = true;
 						if (sendMetric) {
-							final MetricIdentification metricID = 
-									new MetricIdentification(headers.get("ExperimentID"), metric, null, request.getDatatype().getId());
-							try {
-								send_Metric(metricID,1);
-							} catch (Exception e2) {
-								this.getLogger().info( Util.msg("[ERROR] ", e2.getMessage()));
-							}
+							metricService.sendMetric(managerApiUrl, headers.get("ExperimentID"), metric, request.getDatatype().getId());
 						}
 					} else { // requests served from the data cache (M10)
 						
 						this.getLogger().info("Fresh data obtained from cache!");
-
 						if (sendMetric) {
-							final MetricIdentification metricID = 
-									new MetricIdentification(headers.get("ExperimentID"), "R_MEM_CACHE", null, request.getDatatype().getId());
-							try {
-								send_Metric(metricID,1);
-							} catch (Exception e2) {
-								this.getLogger().info(Util.msg("[ERROR] ", e2.getMessage()));
-							}
+							metricService.sendMetric(managerApiUrl, headers.get("ExperimentID"), "R_MEM_CACHE", request.getDatatype().getId());
 						}
 					}
 				}
@@ -228,13 +225,7 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements Applicati
 			for (EndDevice endDevice : endDevices) {
 				ArrayList<Data> value = this.getVn().getData().get(endDevice.getHostName());
 				if (sendMetric) {
-					final MetricIdentification metricID =
-							new MetricIdentification(headers.get("ExperimentID"),"R_TEMP_DB", null, request.getDatatype().getId());
-					try {
-						send_Metric(metricID,1);
-					} catch (Exception e2) {
-						this.getLogger().info(Util.msg("[ERROR] ", e2.getMessage()));
-					}
+					metricService.sendMetric(managerApiUrl, headers.get("ExperimentID"), "R_TEMP_DB", request.getDatatype().getId());
 				}
 				for (Data data : value) {
 					// get new data from DB
@@ -245,99 +236,91 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements Applicati
 			}
         }
 
-		new Thread(()->{
-			try {
-				String jsonData = Util.obj2json(this.getVn().getData());
-				this.getLogger().info( Util.msg("Sending data to request issuer...."));
-				Util.callBack(request.getCallback(), jsonData);			
-			} catch (Exception e) {
-				this.getLogger().info( Util.msg("[ERROR] ", "callback URL cannot be executed!\n", e.getMessage()));
-			}
-		}).start();
+		// Callback
+		// Sending data to request issuer.
+		asyncService.run(()-> {
+			this.callBackResult(request, headers.get("RequestID"));
+		});
 
 		if (sendMetric) {
-			
-			final LocalDateTime start = LocalDateTime.parse(headers.get("StartDateTime"));
-			long latency = 0;
-			try {
-				latency = Long.parseLong(headers.get("CommLatency"));
-			} catch (Exception e2) {
-				latency = 0;
-			}
-
-			final LocalDateTime finish = LocalDateTime.now();
-			final LocalDateTime finishWithLatency = finish.plus(latency, ChronoField.MILLI_OF_DAY.getBaseUnit());
-			
-			MetricIdentification metricID = new MetricIdentification(headers.get("ExperimentID"),"TIME_REQ", null, request.getDatatype().getId());
-			try { // The metric TIME_REQ values (id and start date time) come from the HttpHeader
-				send_Metric(metricID, start, finishWithLatency);
-			} catch (Exception e2) {
-				this.getLogger().info(Util.msg("[ERROR] ","Registering the metric [", metricID.toString(), "]\n", 
-						e2.getCause().getMessage()));
-			}
-			long responseTime = Duration.between(start, finishWithLatency).toMillis();
-			this.getLogger().info( Util.msg("Virtual Node process request [", headers.get("RequestID"), "] finished (+latency)! DT=", finishWithLatency.toString(),
-					" computational time (ms)->", String.valueOf(responseTime) ));
-			
-			long responseTimeNoLatency = Duration.between(start, finish).toMillis();
-			this.getLogger().info( Util.msg("finished (-latency) DT=", finish.toString()));
-			this.getLogger().info( Util.msg("Computational time (ms) (-latency) ->", String.valueOf(responseTimeNoLatency)));
-			this.getLogger().info( Util.msg("Latency measured = ", String.valueOf(latency)));
-
-			//checking if the request parameter RTT was fulfilled
-			//the unmet RTTs are measured via M11 metric.
-			if (request.getParam().getRtt() != null && responseTime > request.getParam().getRtt()) {
-				metricID = new MetricIdentification(headers.get("ExperimentID"),"REQ_RTTH_INV", null, request.getDatatype().getId());
-				try {
-					send_Metric(metricID,1);
-				} catch (Exception e2) {
-					this.getLogger().info(Util.msg("[ERROR] ", e2.getMessage()));
-				}
-			}
-
-		} else {
-			this.getLogger().info( "Virtual Node process request finished!");
-			this.getLogger().info( "--------------------------------------------------------");
-		}
+			asyncService.run(()-> {
+				sendAllMetrics(request, headers);
+			});
+		}		
 		if (sendfreshData) {
-			new Thread( ()->{
+			asyncService.run(()-> {
 				shareData(headers);
-			}).start();
+			});
 		}
+		this.getLogger().info( "Virtual Node process request finished!");
+		this.getLogger().info( "--------------------------------------------------------");
 	}
 
-	private void send_Metric(MetricIdentification metricId, Integer value) throws Exception {
-		new Thread( ()->{
-			this.getLogger().info( Util.msg("Sending metric ", metricId.toString(), " to registry..."));
-			try {
-				UtilMetric.sendMetric(this.managerApiUrl, metricId.getKey(), metricId.toString(), value);
-			} catch (Exception e) {
-				this.getLogger().info( 
-					Util.msg("[ERROR] ","Submitting the metric [", metricId.toString(), "] to the registry.\n", e.getMessage())
-				);
-			}
-		}).start();
-	}
+	private void sendAllMetrics(Request request, LinkedHashMap<String, String> headers) {
+		this.getLogger().info( Util.msg("Registering metrics of the request [",headers.get("RequestID"),"]..." ));
+		final LocalDateTime start = LocalDateTime.parse(headers.get("StartDateTime"));
+		long latency = 0;
+		try {
+			latency = Long.parseLong(headers.get("CommLatency"));
+		} catch (Exception e2) {
+			latency = 0;
+		}
 
-	//Analytic key -> E1-200-M3-104-UFRJ.UbicompLab.temperature
-	//Summary key  -> E1.200-M3-0-UFRJ.UbicompLab.temperature
-	// The difference between analytic and summary is the variation value.
-	private void send_Metric(MetricIdentification metricId, LocalDateTime start, LocalDateTime finish) throws Exception {
-		new Thread( ()->{
-			this.getLogger().info( Util.msg("Sending metric ", metricId.toString(), " to registry..."));
-			try {
-				// Analytic UtilMetric.sendMetric(this.managerApiUrl, metricId.getKey(), metricId.toString(), start, finish);
-				// Summary
-				UtilMetric.sendMetricSummary(this.managerApiUrl, metricId.getKey(), metricId.getSummaryKey(), start, finish);
-			} catch (Exception e) {
-				this.getLogger().info( 
-						Util.msg("[ERROR] ","Submitting the metric [", metricId.toString(), "] to the registry.\n", e.getMessage())
-				);
-			}			
-		}).start();
+		long timeSpentWithP2P = 0;
+		try {
+			timeSpentWithP2P = Long.parseLong(headers.get("TimeSpentWithP2P"));
+		} catch (Exception e2) {
+			timeSpentWithP2P = 0;
+		}
+
+		final LocalDateTime finish = LocalDateTime.now();
+		final LocalDateTime finishWithLatency = finish.plus(latency, ChronoField.MILLI_OF_DAY.getBaseUnit());
+		
+		// The metric TIME_REQ values (id and start date time) come from the HttpHeader
+		metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"),"TIME_REQ", request.getDatatype().getId(), start, finishWithLatency);
+
+		long responseTime = Duration.between(start, finishWithLatency).toMillis();
+		this.getLogger().info( Util.msg("Virtual Node process request [", headers.get("RequestID"), "] finished (+latency)! DT=", finishWithLatency.toString(),
+				" computational time (ms)->", String.valueOf(responseTime) ));
+		
+		long responseTimeNoLatency = Duration.between(start, finish).toMillis();
+		this.getLogger().info( Util.msg("finished (-latency) DT=", finish.toString()));
+		this.getLogger().info( Util.msg("Computational time (ms) (-latency) ->", String.valueOf(responseTimeNoLatency)));
+		this.getLogger().info( Util.msg("Latency measured = ", String.valueOf(latency)));
+		this.getLogger().info( Util.msg("Time of P2P = ", String.valueOf(timeSpentWithP2P)));
+
+		//checking if the request parameter RTT was fulfilled
+		//the unmet RTTs are measured via M11 metric.
+		if (request.getParam().getRtt() != null && (responseTime+timeSpentWithP2P) > request.getParam().getRtt()) {
+			metricService.sendMetric(managerApiUrl, headers.get("ExperimentID"),"REQ_RTTH_INV", request.getDatatype().getId());
+		}
+		
+		if (timeSpentWithP2P>0) {
+			metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"TIME_SPENT_P2P", request.getDatatype().getId(), timeSpentWithP2P);
+		}
+
+	}
+	
+	private void callBackResult(Request request, String requestId) {
+		StopWatch callBackTime = new StopWatch();
+		callBackTime.start();
+
+		this.getLogger().info( Util.msg("Sending data to the request issuer [", requestId,"]...."));
+		try {
+			String jsonData = Util.obj2json(this.getVn().getData());
+			Util.callBack(request.getCallback(), jsonData);			
+			this.getLogger().info( Util.msg("Data sent to the request issuer."));
+		} catch (Exception e) {
+			this.getLogger().info( Util.msg("[ERROR] ", "callback URL cannot be executed!\n", e.getMessage()));
+		}
+
+		callBackTime.stop();
+		this.getLogger().info( Util.msg("CallBack response time due to latency ->", Long.toString(callBackTime.getTotalTimeMillis())));
+
 	}
 
 	@Override
+	@Async("ProcessExecutor-VnSensing")
 	public void neighborRegister(ArrayList<String> neighbors) {
 		this.getLogger().info("[NEIGHBOR REGISTER] Updating the neighborhood list...");
 		this.getVn().setNeighbors(neighbors);
@@ -346,6 +329,7 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements Applicati
 	}
 
 	@Override
+	@Async("ProcessExecutor-VnSensing")
 	public void setData(String element, ArrayList<Data> data, String... args) {
 		this.getLogger().info( Util.msg("[SETDATA] Request ID [", args[0], "]..."));		
 		this.getLogger().info( Util.msg("[SETDATA] Updating data for the element [", element, "]..."));
