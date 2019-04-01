@@ -4,14 +4,15 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import br.edu.ufrj.lwcoedge.core.interfaces.IShare;
-import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricIdentification;
 import br.edu.ufrj.lwcoedge.core.model.Data;
 import br.edu.ufrj.lwcoedge.core.model.DataToShare;
 import br.edu.ufrj.lwcoedge.core.model.Datatype;
@@ -19,21 +20,26 @@ import br.edu.ufrj.lwcoedge.core.model.Element;
 import br.edu.ufrj.lwcoedge.core.model.Type;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
 import br.edu.ufrj.lwcoedge.core.service.AbstractService;
+import br.edu.ufrj.lwcoedge.core.service.SendMetricService;
 import br.edu.ufrj.lwcoedge.core.util.Util;
-import br.edu.ufrj.lwcoedge.core.util.UtilMetric;
 
 @Service
-public class P2PDataSharingService extends AbstractService implements ApplicationRunner, IShare {
+@ComponentScan("br.edu.ufrj.lwcoedge.core")
+public class P2PDataSharingService extends AbstractService implements IShare {
 
 	private boolean enableShareData = true;
-	private String ManagerApiUrl;
+	private String managerApiUrl;
+	
+	@Autowired
+	SendMetricService metricService;
 	
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void appConfig(ApplicationArguments args) throws Exception {
+		this.getLogger().info("LW-CoEdge loading application settings...\n");
 		if (args != null && !args.getOptionNames().isEmpty()) {
 			try {
 				this.loadComponentsPort(args);
-				this.ManagerApiUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
+				this.managerApiUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
 			} catch (Exception e) {
 				this.getLogger().info(e.getMessage());
 				System.exit(-1);
@@ -41,7 +47,9 @@ public class P2PDataSharingService extends AbstractService implements Applicatio
 		} else {
 			this.getLogger().info("No application settings founded!");
 			System.exit(-1);
-		}				
+		}
+		this.getLogger().info("");
+		this.getLogger().info("LW-CoEdge application settings loaded.\n");
 	}
 
 	private VirtualNode getNeighborVirtualNode(String vnID) throws Exception {
@@ -62,6 +70,7 @@ public class P2PDataSharingService extends AbstractService implements Applicatio
 		return null;
 	}
 	
+	@Async("ProcessExecutor-dataSharing")
 	@Override
 	public void shareData(VirtualNode virtualNode, String element, ArrayList<Data> data, String... args) throws Exception {
 		if (!enableShareData) {
@@ -99,13 +108,9 @@ public class P2PDataSharingService extends AbstractService implements Applicatio
 				Util.sendRequest(url, Util.getDefaultHeaders(headers), HttpMethod.POST, dataToshare, Void.class);
 				this.getLogger().info("Fresh data sent to the neighbor Virtual Node with success!");
 
-				try { //M12 -> data interchange using data sharing
-					MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "AVG_DTSHARING", null, neighborVN.getDatatype().getDescriptorId());
-					Long valueOf = Long.valueOf(args[3]);
-					registerRequestSizeMetric(id, valueOf);
-				} catch (Exception e) {
-					this.getLogger().info( Util.msg("[ERROR shareData]", e.getCause().getMessage()));
-				}
+				//M12 -> data interchange using data sharing
+				Long valueOf = Long.valueOf(args[3]);
+				metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"), "AVG_DTSHARING", neighborVN.getDatatype().getDescriptorId(), valueOf);
 
 			} catch (Exception e) {
 				String msg = Util.msg("[ERROR shareData] ","Sending the fresh data to the Virtual Node failed!\n",e.getMessage());
@@ -115,6 +120,7 @@ public class P2PDataSharingService extends AbstractService implements Applicatio
 		this.getLogger().info("Data sharing finished!");
 	}
 
+	@Override
 	public void setDataSharing(boolean enable) {
 		this.getLogger().info("Configuring the data sharing process...");
 		this.enableShareData = enable;
@@ -123,18 +129,6 @@ public class P2PDataSharingService extends AbstractService implements Applicatio
 		} else {
 			this.getLogger().info("The data sharing process is disabled!");
 		}
-	}
-
-	private void registerRequestSizeMetric(MetricIdentification id, Long valueOf) throws Exception {
-		new Thread(()-> {
-			//Bandwidth consumed
-			try {
-				UtilMetric.sendMetricSummaryValue(this.ManagerApiUrl, id.getKey(), id.toString(), valueOf);
-			} catch (Exception e) {
-				String msg = Util.msg("[ERROR] ","Error submitting the metric [", id.toString(), "] to the registry.", e.getMessage());
-				this.getLogger().info(msg);
-			}
-		}).start();
 	}
 
 }
