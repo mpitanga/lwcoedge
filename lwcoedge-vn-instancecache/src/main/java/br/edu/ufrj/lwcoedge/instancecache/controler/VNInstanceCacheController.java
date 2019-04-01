@@ -3,6 +3,8 @@ package br.edu.ufrj.lwcoedge.instancecache.controler;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,13 +19,18 @@ import br.edu.ufrj.lwcoedge.instancecache.service.VNInstanceCacheService;
 
 @RestController
 @RequestMapping("/vninstancecache")
-public class VNInstanceCacheController {
+public class VNInstanceCacheController implements ApplicationRunner {
 
 	@Autowired
 	VNInstanceCacheService service;
 	
 	public VNInstanceCacheController() {}
 	
+	@Override
+	public void run(ApplicationArguments args) throws Exception {
+		service.appConfig(args);
+	}
+
 	@PostMapping("/search")
 	public VirtualNode getData(@RequestBody Datatype key, HttpServletRequest httpRequest) {
 		final String RequestID = httpRequest.getHeader("RequestID");
