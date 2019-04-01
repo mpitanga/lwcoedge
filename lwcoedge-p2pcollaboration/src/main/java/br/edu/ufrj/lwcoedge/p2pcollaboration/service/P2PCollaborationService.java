@@ -1,6 +1,7 @@
 package br.edu.ufrj.lwcoedge.p2pcollaboration.service;
 
 import java.lang.annotation.Native;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
@@ -13,15 +14,16 @@ import java.util.stream.Collectors;
 import org.icmp4j.IcmpPingRequest;
 import org.icmp4j.IcmpPingResponse;
 import org.icmp4j.IcmpPingUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import br.edu.ufrj.lwcoedge.core.cache.Cache;
 import br.edu.ufrj.lwcoedge.core.interfaces.IP2Prov;
-import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricIdentification;
 import br.edu.ufrj.lwcoedge.core.model.Descriptor;
 import br.edu.ufrj.lwcoedge.core.model.EdgeNode;
 import br.edu.ufrj.lwcoedge.core.model.Element;
@@ -33,12 +35,16 @@ import br.edu.ufrj.lwcoedge.core.model.Type;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNodeInstances;
 import br.edu.ufrj.lwcoedge.core.service.AbstractService;
+import br.edu.ufrj.lwcoedge.core.service.SendMetricService;
 import br.edu.ufrj.lwcoedge.core.util.Util;
-import br.edu.ufrj.lwcoedge.core.util.UtilMetric;
 
 @Service
-public class P2PCollaborationService extends AbstractService implements ApplicationRunner, IP2Prov {
+@ComponentScan("br.edu.ufrj.lwcoedge.core")
+public class P2PCollaborationService extends AbstractService implements IP2Prov {
 
+	@Autowired
+	SendMetricService metricService;
+	
 	// This constant defines the amount of data types per edge node
 	@Native private static int MAX_ELEMENTS2 = 5000;
 	@Native private static int TIMETOLIVE = 3600*12; // half day
@@ -56,7 +62,8 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 	final IcmpPingRequest pingRequest = IcmpPingUtil.createIcmpPingRequest();
 	
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void appConfig(ApplicationArguments args) throws Exception {
+		this.getLogger().info("LW-CoEdge loading application settings...\n");
 		if (args != null && !args.getOptionNames().isEmpty()) {
 			try {
 				this.loadComponentsPort(args);
@@ -75,9 +82,11 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 			this.getLogger().info("No application settings founded!");
 			System.exit(-1);
 		}		
-		
+		this.getLogger().info("");
+		this.getLogger().info("LW-CoEdge application settings loaded.\n");
 	}
 	
+	@Override
 	public void neededResources() throws Exception {
 		this.getLogger().info("Loading Data types needed resources config...");
 		Arrays.asList(Type.values())
@@ -85,6 +94,7 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 		this.getLogger().info("Data types needed resources config loaded! ");		
 	}
 	
+	@Override
 	public void edgeNodeConfig() throws Exception {
 		this.getLogger().info("Loading edge node config...");
 		this.edgeNode = this.getEdgeNodeConfig();
@@ -120,6 +130,10 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 
 	@Override
 	public void sendToNeighborNode(Request request, String... args) throws Exception {
+		this.getLogger().info( 
+				Util.msg("[SendToNeighborNode] Request received [", args[0], "]") 
+		);
+
 		if (!enableCollaboration) {
 			this.getLogger().info( "[SendToNeighborNode] The collaboration process is inactive!" );
 			throw new Exception("[SendToNeighborNode] The collaboration process is inactive!");
@@ -129,10 +143,13 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 			// if the Proof-of-Concept sends the request, then allow the metric registration.
 			final boolean sendMetric = !args[2].equals("R");
 
+			final LocalDateTime startDTSelectNeighborNode = LocalDateTime.now();
 			EdgeNode en = this.getNeighborNode(request, args[2], sendMetric);
 			if (en == null) {
 				throw new Exception("[SendToNeighborNode] No neighboring node available!");
 			}
+			final LocalDateTime finishDTSelectNeighborNode = LocalDateTime.now();
+			//final long timeToSelectNeighborNode = Duration.between(startDTSelectNeighborNode, finishDTSelectNeighborNode).toMillis();
 
 			String resourceAllocatorUrl = this.getUrl("http://", en.getIp(), this.getPorts().getLwcoedge_resourceallocator(), 
 					"/resourceallocator/handlerequest");
@@ -146,46 +163,52 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 			headers.put("StartCommDateTime", args[3]);
 			headers.put("StartP2PDateTime", args[4]);
 			headers.put("RequestSize", args[5]);
+			headers.put("TimeSpentWithP2P", args[6]);
 
 			// Calculating the communication latency between the current edge node and the neighbor edge node
 			long latency = this.ping(en.getIp(), 4, Integer.parseInt(headers.getOrDefault("RequestSize", "32")));
 			headers.put("CommLatency", Long.toString(latency));
 
-			this.getLogger().info( Util.msg("[SendToNeighborNode] Sending the request [", headers.get("RequestID") ,"] to the Resource allocator url = ", resourceAllocatorUrl));
+			final LocalDateTime finishDateCommWithLatency = finishDTSelectNeighborNode.plus(latency, ChronoField.MILLI_OF_DAY.getBaseUnit());
+
+			final LocalDateTime start = LocalDateTime.parse(headers.get("StartDateTime"));
+			final long OldTimeSpentWithP2P = Long.parseLong(headers.getOrDefault("TimeSpentWithP2P", "0"));
+			
+			this.getLogger().info( 
+					Util.msg("[SendToNeighborNode] Sending the request [", headers.get("RequestID") ,
+							"] to the Resource allocator url = ", resourceAllocatorUrl
+					)
+			);
 			Util.sendRequest(resourceAllocatorUrl, Util.getDefaultHeaders(headers), HttpMethod.POST, request, Void.class);
 
+			final LocalDateTime finishSpentFW = LocalDateTime.now();
+			
+			final long timeSpentWithP2P = Duration.between(start, finishSpentFW).toMillis() + OldTimeSpentWithP2P;
+			headers.put("TimeSpentWithP2P", Long.toString(timeSpentWithP2P));
+
+			final long durationSpentFW = Duration.between(start, finishSpentFW).toMillis();
+			this.getLogger().info( 
+					Util.msg("[SendToNeighborNode] Request sent to neighbor node. Start Time to forward = [", finishSpentFW.toString(), 
+							"] Duration to handle the request [", Long.toString(durationSpentFW),
+							"] Time to select neighbor [", finishDTSelectNeighborNode.toString(), 
+							"] Old TimeSpentWithP2P [", Long.toString(OldTimeSpentWithP2P),
+							"] TimeSpentWithP2P [", Long.toString(timeSpentWithP2P), "]."
+					) 
+			);
+
 			if (sendMetric) {
-				//TIME_REQ
-				final MetricIdentification M4 = new MetricIdentification(headers.get("ExperimentID"), "REQ_SENTTO_NB", null, request.getDatatype().getId());
-				try {
-					send_Metric(M4,1);
-				} catch (Exception e) {
-					String msg = Util.msg("[ERROR] ","Error submitting the metric [", M4.toString(), "] to the registry.", e.getMessage());
-					this.getLogger().info(msg);
-				}
+				//TIME_SELECT_NB
+				metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"), "TIME_SELECT_NB", request.getDatatype().getId(), startDTSelectNeighborNode, finishDTSelectNeighborNode);
+
+				//M4
+				metricService.sendMetric(managerApiUrl, headers.get("ExperimentID"), "REQ_SENTTO_NB", request.getDatatype().getId());
 
 				//M5
-				final MetricIdentification M5 = new MetricIdentification(headers.get("ExperimentID"), "TIME_SPENT_FW", null, request.getDatatype().getId());
-				final LocalDateTime start = LocalDateTime.parse(args[1]);
-				final LocalDateTime finish = LocalDateTime.now();
-				try { // The metric M5 values (id and start date time) come from the HttpHeader
-					send_Metric(M5, start, finish);
-				} catch (Exception e2) {
-					this.getLogger().info(Util.msg("[ERROR] ","Registering the metric [", M5.toString(), "]\n", 
-							e2.getCause().getMessage()));
-				}
-				//Communication time (edge to edge).
-				if (headers.get("startCommDateTime") != null) {
-					final MetricIdentification M6 = new MetricIdentification(headers.get("ExperimentID"), "COMM_TIME", null, request.getDatatype().getId());
-					final LocalDateTime startDateComm = LocalDateTime.now();
-					final LocalDateTime finishDateCommWithLatency = startDateComm.plus(latency, ChronoField.MILLI_OF_DAY.getBaseUnit());
+				metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"), "TIME_SPENT_FW", request.getDatatype().getId(), start, finishSpentFW);
 
-					try { // The metric M6 values (id, date and date with latency) come from the HttpHeader
-						send_Metric(M6, startDateComm, finishDateCommWithLatency);
-					} catch (Exception e2) {
-						this.getLogger().info(Util.msg("[ERROR] ","Registering the metric [", M6.toString(), "]\n", 
-								e2.getCause().getMessage()));
-					}
+				//M6 Communication time (edge to edge).
+				if (headers.get("StartCommDateTime") != null) {
+					metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"), "COMM_TIME", request.getDatatype().getId(), finishDTSelectNeighborNode, finishDateCommWithLatency);
 				}
 			}
 		} catch (Exception e) {
@@ -193,46 +216,6 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 			this.getLogger().info( msg );
 			throw new Exception(e.getMessage());
 		}
-	}
-
-	private void registerRequestSizeMetric(MetricIdentification id, Long valueOf) throws Exception {
-		new Thread(()-> {
-			//Bandwidth consumed
-			this.getLogger().info( Util.msg("Sending metric ", id.toString(), " to registry..."));
-			try {
-				UtilMetric.sendMetricSummaryValue(this.managerApiUrl, id.getKey(), id.toString(), valueOf);
-			} catch (Exception e) {
-				String msg = Util.msg("[ERROR] ","Error submitting the metric [", id.toString(), "] to the registry.", e.getMessage());
-				this.getLogger().info(msg);
-			}
-		}).start();
-	}
-
-	private void send_Metric(MetricIdentification metricId, Integer value) throws Exception {
-		new Thread( ()->{
-			this.getLogger().info( Util.msg("Sending metric ", metricId.toString(), " to registry..."));
-			try {
-				UtilMetric.sendMetric(this.managerApiUrl, metricId.getKey(), metricId.toString(), value);
-			} catch (Exception e) {
-				this.getLogger().info( 
-					Util.msg("[ERROR] ","Submitting the metric [", metricId.toString(), "] to the registry.\n", e.getMessage())
-				);
-			}
-		}).start();
-	}
-
-	private void send_Metric(MetricIdentification metricID, LocalDateTime start, LocalDateTime finish) throws Exception {
-		new Thread( ()->{
-			this.getLogger().info( Util.msg("Sending metric ", metricID.toString(), " to registry..."));
-			try {
-				// Summary
-				UtilMetric.sendMetricSummary(this.managerApiUrl, metricID.getKey(), metricID.getSummaryKey(), start, finish);
-			} catch (Exception e) {
-				this.getLogger().info( 
-						Util.msg("[ERROR] ","Submitting the metric [", metricID.toString(), "] to the registry.\n", e.getMessage())
-				);
-			}			
-		}).start();
 	}
 
 	private EdgeNode getNeighborNode(Request request, String experimentID, boolean sendMetric) throws Exception {
@@ -264,19 +247,13 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 					if (sendMetric) {
 
 						//data consumed to know whether a node has resources
-						try {
-							MetricIdentification id = new MetricIdentification(experimentID, "DT_REQSENT_NB_1", null, request.getDatatype().getId());
+						// size of request operation 391 bytes
 
-							// size of request operation 391 bytes
-							
-							Long valueOf = Integer.valueOf(391)+
-									Util.getObjectSize(httpResp.getHeaders()) +
-									Util.getObjectSize(httpResp.getBody());
+						Long valueOf = Integer.valueOf(391)+
+								Util.getObjectSize(httpResp.getHeaders()) +
+								Util.getObjectSize(httpResp.getBody());
 
-							registerRequestSizeMetric(id, valueOf);
-						} catch (Exception e) {
-							this.getLogger().info(e.getMessage());
-						}
+						metricService.sendMetricSummaryValue(managerApiUrl, experimentID, "DT_REQSENT_NB_1", request.getDatatype().getId(), valueOf);
 
 					}
 
@@ -301,19 +278,13 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 				
 				if (sendMetric) {
 					//data consumed to know whether a node has resources
-					try {
-						MetricIdentification id = new MetricIdentification(experimentID, "DT_REQSENT_NB_2", null, datatypeID);
-						
-						// size of request operation 0 bytes
-						Long valueOf = 
-								Integer.valueOf(0)+
-								Util.getObjectSize(httpResp.getHeaders()) +
-								Util.getObjectSize(httpResp.getBody());
+					// size of request operation 0 bytes
+					Long valueOf = 
+							Integer.valueOf(0)+
+							Util.getObjectSize(httpResp.getHeaders()) +
+							Util.getObjectSize(httpResp.getBody());
 
-						registerRequestSizeMetric(id, valueOf);
-					} catch (Exception e) {
-						this.getLogger().info(e.getMessage());
-					}
+					metricService.sendMetricSummaryValue(managerApiUrl, experimentID, "DT_REQSENT_NB_2", datatypeID, valueOf);
 				}
 
 				return httpResp.getBody();
@@ -352,6 +323,7 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 		return neighborNode;
 	}
 
+	@Async("ProcessExecutor-P2P")
 	@Override
 	public void registerVNtoDataSharing(VirtualNode newVirtualNode, String... args) throws Exception {
 		try {
@@ -359,12 +331,12 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 				this.getLogger().info( "[RegisterVNtoDataSharing] The data type of type Complex is not supported to the collaboration!" );
 				return;
 			}
-
+/*
 			if (!enableCollaboration) {
 				this.getLogger().info( "[RegisterVNtoDataSharing] The collaboration process is inactive!" );
 				return;
 			}
-
+*/
 			LinkedHashMap<String, String> headers = new LinkedHashMap<String, String>();
 
 			//args -> requestID, startDateTime, experimentID, requestSize
@@ -378,18 +350,14 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 			if (sendMetric) {
 				//DT_SHARING
 				//data consumed to received the answer
-				try {
-					MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_SHARING", null, newVirtualNode.getDatatype().getDescriptorId());
-					Long valueOf = Long.parseLong(headers.getOrDefault("RequestSize", "0"));
-					registerRequestSizeMetric(id, valueOf);
-				} catch (Exception e) {
-					this.getLogger().info(e.getMessage());
-				}				
+				Long valueOf = Long.parseLong(headers.getOrDefault("RequestSize", "0"));
+				metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"), "DT_SHARING_1", newVirtualNode.getDatatype().getDescriptorId(), valueOf);
 			}
 
 			ArrayList<VirtualNode> vnsUpdated = new ArrayList<VirtualNode>();
 						
 			try {
+				this.getLogger().info(Util.msg("Registering VN [",newVirtualNode.getId(),"] inside of the same node to data sharing "));
 				// inside of the same node
 				String VNInstanceCacheUrl = 
 					this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_vn_instancecache(),
@@ -406,14 +374,9 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 				if (sendMetric) {
 					//DT_SHARING
 					//data consumed to received the answer
-					try {
-						MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_SHARING", null, newVirtualNode.getDatatype().getDescriptorId());
-						Long valueOf = Util.getObjectSize(httpResp.getHeaders()) +
-								Util.getObjectSize(httpResp.getBody());
-						registerRequestSizeMetric(id, valueOf);
-					} catch (Exception e) {
-						this.getLogger().info(e.getMessage());
-					}				
+					Long valueOf = Util.getObjectSize(httpResp.getHeaders()) +
+							Util.getObjectSize(httpResp.getBody());
+					metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"), "DT_SHARING_2", newVirtualNode.getDatatype().getDescriptorId(), valueOf);
 				}
 
 			} catch (Exception e) {
@@ -422,6 +385,8 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 
 
 			//Verifying in the neighboring nodes
+			this.getLogger().info(Util.msg("Registering VN [",newVirtualNode.getId(),"] to data sharing in the neighboring nodes."));
+
 			ArrayList<EdgeNode> neighborhood = this.edgeNode.getNeighborhood();
 			for (EdgeNode neighborNode : neighborhood) {
 				try {
@@ -435,14 +400,9 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 					if (sendMetric) {
 						//DT_SHARING
 						//data consumed to received the answer
-						try {
-							MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_SHARING_3", null, newVirtualNode.getDatatype().getDescriptorId());
-							Long valueOf = Util.getObjectSize(httpResp.getHeaders()) +
-									Util.getObjectSize(httpResp.getBody());
-							registerRequestSizeMetric(id, valueOf);
-						} catch (Exception e) {
-							this.getLogger().info(e.getMessage());
-						}				
+						Long valueOf = Util.getObjectSize(httpResp.getHeaders()) +
+								Util.getObjectSize(httpResp.getBody());
+						metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"), "DT_SHARING_3", newVirtualNode.getDatatype().getDescriptorId(), valueOf);
 					}
 
 					ArrayList<VirtualNode> virtualNodeInstances = httpResp.getBody().getVirtualNodeInstances();
@@ -539,7 +499,8 @@ public class P2PCollaborationService extends AbstractService implements Applicat
 		return latency.longValue() ;
 	}
 
-	public void setCollaboration(boolean enable) {
+	@Override
+	public synchronized void setCollaboration(boolean enable) {
 		this.getLogger().info("Configuring the Collaboration process...");
 		this.enableCollaboration = enable;
 		if (enable) {

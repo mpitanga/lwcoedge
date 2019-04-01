@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,18 +16,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpServerErrorException;
 
+import br.edu.ufrj.lwcoedge.core.interfaces.IP2Prov;
 import br.edu.ufrj.lwcoedge.core.model.Request;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
 import br.edu.ufrj.lwcoedge.core.util.Util;
-import br.edu.ufrj.lwcoedge.p2pcollaboration.service.P2PCollaborationService;
 
 @RestController
 @RequestMapping("/p2pcollaboration")
-public class P2PCollaborationController {
+public class P2PCollaborationController implements ApplicationRunner{
 
 	@Autowired
-	P2PCollaborationService service;
+	IP2Prov service;
 	
+	@Override
+	public void run(ApplicationArguments args) throws Exception {
+		service.appConfig(args);
+	}
+
 	@PostMapping("/sendToNeighborNode")
 	public void sendToNeighborNode(@RequestBody Request request, HttpServletRequest httpRequest) {
 		try {
@@ -39,9 +46,13 @@ public class P2PCollaborationController {
 			//new headers
 			final String startP2PDateTime = LocalDateTime.now().toString();
 			final String requestSize = String.valueOf(httpRequest.getContentLengthLong());
-				
+
+			//if the request was again forwarded
+			final String timeSpentWithP2P = 
+					httpRequest.getHeader("TimeSpentWithP2P") == null ? "0" : httpRequest.getHeader("TimeSpentWithP2P");
+
 			service.sendToNeighborNode(request, RequestID, startDateTime, experimentID, 
-						startCommDateTime, startP2PDateTime, requestSize);
+						startCommDateTime, startP2PDateTime, requestSize, timeSpentWithP2P);
 			
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
