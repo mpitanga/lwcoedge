@@ -62,18 +62,19 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 	public void handleRequest(Request request, String... args) throws Exception {
 		LinkedHashMap<String, String> headers = new LinkedHashMap<String, String>();
 		boolean sendMetricEnable = (args.length>0 && !args[2].equals("R"));
+		long oldCommLatency = 0;
 		if (args.length>0) {
-			//args -> RequestID, StartDateTime, ExperimentID, RequestSize, StartCommDateTime, StartP2PDateTime, CommLatency; total = 7 
+			//args -> RequestID, StartDateTime, ExperimentID, RequestSize, StartComm, CommLatency, TimeSpentWithP2P; total = 7 
 			headers.put("RequestID", args[0]);
 			headers.put("StartDateTime", args[1]);
 			headers.put("ExperimentID", args[2]);
 			headers.put("RequestSize", args[3]);
 			headers.put("TimeSpentWithP2P", Long.toString(0l));				
 			if (args.length>4) {
-				headers.put("StartCommDateTime", args[4]);
-				headers.put("StartP2PDateTime", args[5]);
-				headers.put("CommLatency", args[6]);
-				headers.put("TimeSpentWithP2P", args[7]);				
+				headers.put("StartComm", args[4]);
+				headers.put("CommLatency", args[5]);
+				headers.put("TimeSpentWithP2P", args[6]);
+				oldCommLatency += Long.parseLong(args[7]);
 			}
 			if (args.length==8) {
 				this.getLogger().info("Request received from the P2P collaboration!");
@@ -94,7 +95,8 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 			Util.msg("Request [", headers.get("RequestID"),
 				" size = [", headers.get("RequestSize"),
 				"] submitted to process in ", headers.get("StartDateTime"),
-				" - Processing time (with P2P) = ", headers.get("TimeSpentWithP2P")
+				" - Processing time (with P2P) = ", headers.get("TimeSpentWithP2P"),
+				" Old latency = ", Long.toString(oldCommLatency)
 			)
 		);
 
