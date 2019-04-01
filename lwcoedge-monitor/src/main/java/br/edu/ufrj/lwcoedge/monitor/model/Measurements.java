@@ -18,7 +18,7 @@ public class Measurements implements Serializable {
     private BigDecimal value;
 
 	public Measurements() {}
-
+	
 	/**
 	 * @return the statistic
 	 */

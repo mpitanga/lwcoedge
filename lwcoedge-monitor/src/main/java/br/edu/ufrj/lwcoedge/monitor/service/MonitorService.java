@@ -2,7 +2,11 @@ package br.edu.ufrj.lwcoedge.monitor.service;
 
 import java.lang.annotation.Native;
 import java.lang.management.ManagementFactory;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
+import org.springframework.boot.ApplicationArguments;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -27,10 +31,23 @@ public class MonitorService extends AbstractService implements IMonitor {
 	@Native private static int TIMETOLIVE = 600; // 10 min
 	@Native private static int TIMEINTERVAL = 600; // 10 min
 	@Native private static int ONEDAY = 86400;
-	
+		
 	// Key - Value
     private Cache<String, Measurements> cache = new Cache<String, Measurements>(TIMETOLIVE, TIMEINTERVAL, MAX_ELEMENTS);
     private Cache<String, Long> cache2 = new Cache<String, Long>(ONEDAY, ONEDAY, MAX_ELEMENTS);
+
+    private double PERC_MIN_MEMAVAILABLE = 5.0;
+    
+    @Override
+    public void appConfig(ApplicationArguments args) throws Exception {
+		if (args != null && !args.getOptionNames().isEmpty()) {
+			if (args.getOptionValues("PercMinMemAvailable") != null && !args.getOptionValues("PercMinMemAvailable").isEmpty()) {
+				PERC_MIN_MEMAVAILABLE = Double.parseDouble(args.getOptionValues("PercMinMemAvailable").get(0));
+			}
+		}
+		
+		this.getLogger().info( Util.msg("% Min of available memory : ", Double.toString(PERC_MIN_MEMAVAILABLE)));
+    }
 
 	private ActuatorMetrics getActuatorMetrics(String host, Integer port, String metric) throws Exception {
 		StringBuilder url = new StringBuilder();
@@ -48,19 +65,23 @@ public class MonitorService extends AbstractService implements IMonitor {
 		Metrics m = new Metrics();
 		try {
 			ActuatorMetrics am;
-			Measurements jvmMemoryCommitted = cache.get("jvm.memory.committed");
-
-			if (jvmMemoryCommitted == null) {
-				am = getActuatorMetrics(vn.getHostName(), vn.getPort(), "jvm.memory.committed");
-				jvmMemoryCommitted = am.getMeasurements().get(0);
-				cache.put("jvm.memory.committed", jvmMemoryCommitted);
-			}
 			Measurements systemCpuCount = cache.get("system.cpu.count");
 			if (systemCpuCount == null) {
 				am = getActuatorMetrics(vn.getHostName(), vn.getPort(), "system.cpu.count");
 				systemCpuCount = am.getMeasurements().get(0);
 				cache.put("system.cpu.count", systemCpuCount);
 			}
+			
+/*			Measurements jvmMemoryCommitted = cache.get("jvm.memory.committed");
+			if (jvmMemoryCommitted == null) {
+				am = getActuatorMetrics(vn.getHostName(), vn.getPort(), "jvm.memory.committed");
+				jvmMemoryCommitted = am.getMeasurements().get(0);
+				cache.put("jvm.memory.committed", jvmMemoryCommitted);
+			}
+*/
+			am = getActuatorMetrics(vn.getHostName(), vn.getPort(), "jvm.memory.committed");
+			Measurements jvmMemoryCommitted = am.getMeasurements().get(0);
+			
 			am = getActuatorMetrics(vn.getHostName(), vn.getPort(), "jvm.memory.used");
 			Measurements jvmMemoryUsed = am.getMeasurements().get(0);
 			
@@ -71,21 +92,58 @@ public class MonitorService extends AbstractService implements IMonitor {
 			Measurements threadsPeak  = am.getMeasurements().get(0);
 		
 			m.setMem(jvmMemoryCommitted.getValue().intValue());
-			m.setMemFree(jvmMemoryCommitted.getValue().intValue()-jvmMemoryUsed.getValue().intValue());
+			m.setMemUsed(jvmMemoryUsed.getValue().intValue());
 			m.setNumberOfProcessors(systemCpuCount.getValue().intValue());
 			m.setThreadsTotal(threadsPeak.getValue().intValue());
 			m.setThreads(threadsBusy.getValue().intValue());
 			m.setThreadPeek(threadsPeak.getValue().intValue());
 			
-			float percBusy = m.getMemFree()/m.getMem() * 100;
-			m.setBusy( (percBusy>=95) ? true : false );
+			double memReduce = memoryReduce(m);
+
+			m.setResourceBusy((memReduce < PERC_MIN_MEMAVAILABLE ? true : false));
+			
+			this.getLogger().info( Util.msg("VirtualNodeMetrics : ", m.toString(), 
+					" Is Busy? ", Boolean.toString(m.isResourceBusy()),
+					" % available = ", Double.toString(memReduce))
+					);
+			
 		} catch (Exception e) {
-			m.setBusy(false);
+			this.getLogger().info( Util.msg("[ERROR] Generationg Metrics object. Error=", e.getMessage()) );
 		}
-		this.getLogger().info( Util.msg("VirtualNodeMetrics : ", m.toString(), " Is Busy? ", Boolean.toString(m.isResourceBusy())));
 		return m;
 	}
 
+	//one hundred
+	@Native private static BigDecimal ONE_HUNDRED = new BigDecimal(100);
+	private double memoryReduce(Metrics m) {
+		BigDecimal r1 = new BigDecimal ( m.getMemUsed() ).divide(new BigDecimal(m.getMem()), 2, RoundingMode.HALF_UP);
+		BigDecimal r2 = new BigDecimal(1).subtract(r1).round(new MathContext(2, RoundingMode.HALF_UP));
+		BigDecimal memReduce = r2.multiply(ONE_HUNDRED).setScale(1, RoundingMode.HALF_UP);
+		return memReduce.doubleValue();
+	}
+
+/*
+	public static void main(String[] args) {
+		BigDecimal n1 = new BigDecimal ("1.11407208E8");
+		BigDecimal n2 = new BigDecimal ("1.33955584E8");
+		System.out.println(n1.longValue());
+		System.out.println(n2.longValue());
+		
+			Integer total = 127598592;
+			Integer used  = 112366648;
+			BigDecimal r1 = new BigDecimal(used).divide( new BigDecimal(total), 2, RoundingMode.HALF_UP );
+			BigDecimal r2 = new BigDecimal(1).subtract(r1).round(new MathContext(2, RoundingMode.HALF_UP));
+			BigDecimal memReduce = r2.multiply(new BigDecimal(100)).setScale(1, RoundingMode.HALF_UP);
+			System.out.println(used);
+			System.out.println(total);
+			System.out.println(total-used);
+			System.out.println(r1);
+			System.out.println(r2);
+			System.out.println(memReduce);
+			System.out.println( (memReduce.doubleValue()<=12) ? true : false );
+	}
+*/	
+	
 	@Override
 	public ResourcesAvailable getNodeResources(String... args) throws Exception {
 		OperatingSystemMXBean mxbean = 
@@ -111,40 +169,11 @@ public class MonitorService extends AbstractService implements IMonitor {
 		this.getLogger().info( Util.msg("Request size : ",args[3]," OS ResourcesAvailable : ", res.toString()));
 		return 	res;
 	}
-/*
+
 	@Override
-	public ResourcesAvailable getNodeResources() {
-		MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-
-		Object attribute;
-		try {
-			Long totalPhysicalMemorySize = cache2.get("TotalPhysicalMemorySize");
-			if (totalPhysicalMemorySize == null) {
-				attribute = mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "TotalPhysicalMemorySize");
-				totalPhysicalMemorySize = Long.valueOf(attribute.toString());
-				cache2.put("TotalPhysicalMemorySize", totalPhysicalMemorySize);
-			}
-
-			Long AvailableProcessors = cache2.get("AvailableProcessors");
-			if (AvailableProcessors == null) {
-				attribute = mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "AvailableProcessors");
-				AvailableProcessors = Long.valueOf(attribute.toString());
-				cache2.put("AvailableProcessors", AvailableProcessors);
-			}
-
-			attribute = mBeanServer.getAttribute(new ObjectName("java.lang","type","OperatingSystem"), "FreePhysicalMemorySize");
-			Long freePhysicalMemorySize = Long.valueOf(attribute.toString());
-			
-			return 	new ResourcesAvailable(
-					totalPhysicalMemorySize, 
-					freePhysicalMemorySize, 
-					AvailableProcessors);
-
-		} catch (Exception e) {
-			return 	new ResourcesAvailable(0L, 0L, 0L);
-		}
+	public void setPercentualMinMemAvailable(double value) {
+		this.PERC_MIN_MEMAVAILABLE = value;
 	}
-*/
 
 /*
 	public static void main(String[] args) {
