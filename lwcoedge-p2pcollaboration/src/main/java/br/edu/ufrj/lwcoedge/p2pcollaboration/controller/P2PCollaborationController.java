@@ -1,7 +1,5 @@
 package br.edu.ufrj.lwcoedge.p2pcollaboration.controller;
 
-import java.time.LocalDateTime;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,10 +39,9 @@ public class P2PCollaborationController implements ApplicationRunner{
 			final String experimentID = httpRequest.getHeader("ExperimentID");
 
 			// it is created in the "registerToCollaboration" function from the ResourceProvisioner
-			final String startCommDateTime = httpRequest.getHeader("StartCommDateTime");
+			final String startComm = httpRequest.getHeader("StartComm");
 
 			//new headers
-			final String startP2PDateTime = LocalDateTime.now().toString();
 			final String requestSize = String.valueOf(httpRequest.getContentLengthLong());
 
 			//if the request was again forwarded
@@ -52,7 +49,7 @@ public class P2PCollaborationController implements ApplicationRunner{
 					httpRequest.getHeader("TimeSpentWithP2P") == null ? "0" : httpRequest.getHeader("TimeSpentWithP2P");
 
 			service.sendToNeighborNode(request, RequestID, startDateTime, experimentID, 
-						startCommDateTime, startP2PDateTime, requestSize, timeSpentWithP2P);
+						startComm, requestSize, timeSpentWithP2P);
 			
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 

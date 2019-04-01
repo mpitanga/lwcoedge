@@ -3,7 +3,6 @@ package br.edu.ufrj.lwcoedge.p2pcollaboration.service;
 import java.lang.annotation.Native;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -12,7 +11,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.icmp4j.IcmpPingRequest;
-import org.icmp4j.IcmpPingResponse;
 import org.icmp4j.IcmpPingUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -59,7 +57,7 @@ public class P2PCollaborationService extends AbstractService implements IP2Prov 
 	
 	private boolean enableCollaboration = true;
 	
-	final IcmpPingRequest pingRequest = IcmpPingUtil.createIcmpPingRequest();
+	//final IcmpPingRequest pingRequest = IcmpPingUtil.createIcmpPingRequest();
 	
 	@Override
 	public void appConfig(ApplicationArguments args) throws Exception {
@@ -142,55 +140,82 @@ public class P2PCollaborationService extends AbstractService implements IP2Prov 
 		try {
 			// if the Proof-of-Concept sends the request, then allow the metric registration.
 			final boolean sendMetric = !args[2].equals("R");
-
-			final LocalDateTime startDTSelectNeighborNode = LocalDateTime.now();
-			EdgeNode en = this.getNeighborNode(request, args[2], sendMetric);
-			if (en == null) {
-				throw new Exception("[SendToNeighborNode] No neighboring node available!");
-			}
-			final LocalDateTime finishDTSelectNeighborNode = LocalDateTime.now();
-			//final long timeToSelectNeighborNode = Duration.between(startDTSelectNeighborNode, finishDTSelectNeighborNode).toMillis();
-
-			String resourceAllocatorUrl = this.getUrl("http://", en.getIp(), this.getPorts().getLwcoedge_resourceallocator(), 
-					"/resourceallocator/handlerequest");
 			
 			LinkedHashMap<String, String> headers = new LinkedHashMap<String, String>();
 
-			//args -> RequestID, StartDateTime, ExperimentID, StartCommDateTime, StartP2PDateTime, RequestSize
+			//args -> RequestID, StartDateTime, ExperimentID, StartComm, RequestSize, TimeSpentWithP2P
 			headers.put("RequestID", args[0]);
 			headers.put("StartDateTime", args[1]);
 			headers.put("ExperimentID", args[2]);
-			headers.put("StartCommDateTime", args[3]);
-			headers.put("StartP2PDateTime", args[4]);
-			headers.put("RequestSize", args[5]);
-			headers.put("TimeSpentWithP2P", args[6]);
+			headers.put("StartComm", args[3]);
+			headers.put("RequestSize", args[4]);
+			headers.put("TimeSpentWithP2P", args[5]);
 
-			// Calculating the communication latency between the current edge node and the neighbor edge node
-			long latency = this.ping(en.getIp(), 4, Integer.parseInt(headers.getOrDefault("RequestSize", "32")));
-			headers.put("CommLatency", Long.toString(latency));
-
-			final LocalDateTime finishDateCommWithLatency = finishDTSelectNeighborNode.plus(latency, ChronoField.MILLI_OF_DAY.getBaseUnit());
-
+			//The date & time when the request started (come from resource allocator)
 			final LocalDateTime start = LocalDateTime.parse(headers.get("StartDateTime"));
-			final long OldTimeSpentWithP2P = Long.parseLong(headers.getOrDefault("TimeSpentWithP2P", "0"));
+
+			final LocalDateTime startDTSelectNeighborNode = LocalDateTime.now();
+			final long spentTimeToStartP2P = Duration.between(start, startDTSelectNeighborNode).toMillis();
+
+			this.getLogger().info( 
+					Util.msg("[SendToNeighborNode] Spent time to receive the request and start the P2P [", 
+							Long.toString(spentTimeToStartP2P),"]")
+			);
+
+			EdgeNode en = this.getNeighborNode(request, headers.get("ExperimentID"), sendMetric);
+			if (en == null) {
+				throw new Exception("[SendToNeighborNode] No neighboring node available!");
+			}
+			String resourceAllocatorUrl = this.getUrl("http://", en.getIp(), this.getPorts().getLwcoedge_resourceallocator(), 
+					"/resourceallocator/handlerequest");
+
+			final LocalDateTime finalDTSelectNeighborNode = LocalDateTime.now();
+			final long timeToSelectNeighborNode = Duration.between(startDTSelectNeighborNode, finalDTSelectNeighborNode).toMillis();
 			
+			this.getLogger().info( 
+					Util.msg("[SendToNeighborNode] The neighbor node selected.", 
+							" Start [", startDTSelectNeighborNode.toString(),
+							"] End [", finalDTSelectNeighborNode.toString(),
+							"] Duration [", Long.toString(timeToSelectNeighborNode), "]")
+			);
+			
+			// Calculating the communication latency between the current edge node and the neighbor edge node
+//			long latency = this.ping(en.getIp(), 2, Integer.parseInt(headers.getOrDefault("RequestSize", "32")));
+//			headers.put("CommLatency", Long.toString(latency));
+
 			this.getLogger().info( 
 					Util.msg("[SendToNeighborNode] Sending the request [", headers.get("RequestID") ,
 							"] to the Resource allocator url = ", resourceAllocatorUrl
 					)
 			);
-			Util.sendRequest(resourceAllocatorUrl, Util.getDefaultHeaders(headers), HttpMethod.POST, request, Void.class);
 
-			final LocalDateTime finishSpentFW = LocalDateTime.now();
-			
-			final long timeSpentWithP2P = Duration.between(start, finishSpentFW).toMillis() + OldTimeSpentWithP2P;
+//			final LocalDateTime finalDateCommWithLatency = finalDTSelectNeighborNode.plus(latency, ChronoField.MILLI_OF_DAY.getBaseUnit());
+
+			final long OldTimeSpentWithP2P = Long.parseLong(headers.getOrDefault("TimeSpentWithP2P", "0"));		
+			final long timeSpentWithP2P = (spentTimeToStartP2P+timeToSelectNeighborNode) + OldTimeSpentWithP2P;			
 			headers.put("TimeSpentWithP2P", Long.toString(timeSpentWithP2P));
 
-			final long durationSpentFW = Duration.between(start, finishSpentFW).toMillis();
+			final LocalDateTime startSendRequest = LocalDateTime.now();	
+			headers.put("startP2PSendRequest", startSendRequest.toString());
+			Util.sendRequest(resourceAllocatorUrl, Util.getDefaultHeaders(headers), HttpMethod.POST, request, Void.class);
+			final LocalDateTime finalDateCommWithLatency = LocalDateTime.now();
+			
+			// Calculating the communication latency between the current edge node and the neighbor edge node
+			//long commLatency = Duration.between(startSendRequest, finalDateCommWithLatency).toMillis();					
+			//headers.put("CommLatency", Long.toString(commLatency));
+
+/*			this.getLogger().info( 
+					Util.msg("[SendToNeighborNode] Sending the request [", headers.get("RequestID") ,
+							"] to the Resource allocator url = ", resourceAllocatorUrl
+					)
+			);
+			
+			Util.sendRequest(resourceAllocatorUrl, Util.getDefaultHeaders(headers), HttpMethod.POST, request, Void.class);
+*/
+			final long durationSpentFW = Duration.between(start, finalDateCommWithLatency).toMillis();
 			this.getLogger().info( 
-					Util.msg("[SendToNeighborNode] Request sent to neighbor node. Start Time to forward = [", finishSpentFW.toString(), 
-							"] Duration to handle the request [", Long.toString(durationSpentFW),
-							"] Time to select neighbor [", finishDTSelectNeighborNode.toString(), 
+					Util.msg("[SendToNeighborNode] Request sent to neighbor node.",
+							"] Duration to handle the request (from dt received request to forward) [", Long.toString(durationSpentFW),
 							"] Old TimeSpentWithP2P [", Long.toString(OldTimeSpentWithP2P),
 							"] TimeSpentWithP2P [", Long.toString(timeSpentWithP2P), "]."
 					) 
@@ -198,17 +223,17 @@ public class P2PCollaborationService extends AbstractService implements IP2Prov 
 
 			if (sendMetric) {
 				//TIME_SELECT_NB
-				metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"), "TIME_SELECT_NB", request.getDatatype().getId(), startDTSelectNeighborNode, finishDTSelectNeighborNode);
+				metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"), "TIME_SELECT_NB", request.getDatatype().getId(), startDTSelectNeighborNode, finalDTSelectNeighborNode);
 
 				//M4
 				metricService.sendMetric(managerApiUrl, headers.get("ExperimentID"), "REQ_SENTTO_NB", request.getDatatype().getId());
 
 				//M5
-				metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"), "TIME_SPENT_FW", request.getDatatype().getId(), start, finishSpentFW);
+				metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"), "TIME_SPENT_FW", request.getDatatype().getId(), start, finalDateCommWithLatency);
 
 				//M6 Communication time (edge to edge).
-				if (headers.get("StartCommDateTime") != null) {
-					metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"), "COMM_TIME", request.getDatatype().getId(), finishDTSelectNeighborNode, finishDateCommWithLatency);
+				if (headers.get("StartComm") != null) {
+					metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"), "COMM_TIME", request.getDatatype().getId(), startSendRequest, finalDateCommWithLatency);
 				}
 			}
 		} catch (Exception e) {
@@ -234,43 +259,69 @@ public class P2PCollaborationService extends AbstractService implements IP2Prov 
 		EdgeNode bestNeighborNode = null;
 		ArrayList<EdgeNode> neighborhood = this.edgeNode.getNeighborhood();
 		for (EdgeNode neighborNode : neighborhood) {
-			String neighborNodeUrl =
-					this.getUrl("http://", neighborNode.getIp(), this.getPorts().getLwcoedge_edgenode_manager(), 
-							"/edgenodemanager/hasConnectedDevices");
-			boolean hasConnectedDevices = false;
-			try {
-				ResponseEntity<Boolean> httpResp = 
-						Util.sendRequest(neighborNodeUrl, Util.getDefaultHeaders(), HttpMethod.POST, dtDescriptor, Boolean.class);
-				if (httpResp.hasBody()) {
-					hasConnectedDevices = httpResp.getBody();
-					
-					if (sendMetric) {
-
-						//data consumed to know whether a node has resources
-						// size of request operation 391 bytes
-
-						Long valueOf = Integer.valueOf(391)+
-								Util.getObjectSize(httpResp.getHeaders()) +
-								Util.getObjectSize(httpResp.getBody());
-
-						metricService.sendMetricSummaryValue(managerApiUrl, experimentID, "DT_REQSENT_NB_1", request.getDatatype().getId(), valueOf);
-
-					}
-
-				}
-			} catch (Exception e) {
-				hasConnectedDevices = false;
-			}
+			boolean hasConnectedDevices = neighborNode.hasConnectedDevices(dtDescriptor);
+			this.getLogger().info(Util.msg("[SendToNeighborNode] Verifying the connected devices. Edge Node [", neighborNode.getHostName(),
+					"] has connected devices? ", Boolean.toString(hasConnectedDevices)
+					)
+			);
 			if (hasConnectedDevices) {
 				bestNeighborNode = this.bestResource(dtDescriptor, bestNeighborNode, neighborNode, experimentID, request.getDatatype().getId(), sendMetric);
+				this.getLogger().info(Util.msg("[SendToNeighborNode] Best Neighbor Node: ",(bestNeighborNode == null) ? "No edge node available" : bestNeighborNode.getHostName()));
 			}
 		}
 		return bestNeighborNode;
 	}
 
-	private ResourcesAvailable getEdgeNodeResourcesAvailable(EdgeNode en, String experimentID, String datatypeID, boolean sendMetric) {
+	private EdgeNode bestResource(Descriptor datatype, EdgeNode bestNeighborNode, EdgeNode neighborNode, String experimentID, String datatypeID, boolean sendMetric) {
+		if (bestNeighborNode == null) {
+			bestNeighborNode = neighborNode;
+		}
+
+		this.getLogger().info("[SendToNeighborNode] Checking edge node with best resources...");
+		// loading resources "/node/resources"
+		ResourcesAvailable bestNeighborNodeRes;
+		try {
+			bestNeighborNodeRes = this.getEdgeNodeResourcesAvailable(bestNeighborNode, experimentID, datatypeID, sendMetric);
+		} catch (Exception e) {
+			this.getLogger().info(Util.msg("[ERROR1] ",e.getMessage()));
+			if (bestNeighborNode.getIp().equals(neighborNode.getIp())) {
+				return null;
+			}
+			return bestNeighborNode;
+		}
+	
+		ResourcesAvailable neighborNodeRes;
+		try {
+			if (bestNeighborNode.getIp().equals(neighborNode.getIp())) {
+				neighborNodeRes = bestNeighborNodeRes;
+			} else {
+				neighborNodeRes = this.getEdgeNodeResourcesAvailable(neighborNode, experimentID, datatypeID, false);
+			}
+		} catch (Exception e) {
+			this.getLogger().info(Util.msg("[ERROR2] ",e.getMessage()));
+			return bestNeighborNode;
+		}
+
+		Long needMem = this.neededRes.get(datatype.getType().toString()).getPhysicalMemorySize();
+		if (needMem > bestNeighborNodeRes.getFreePhysicalMemorySize() && needMem > neighborNodeRes.getFreePhysicalMemorySize()) {
+			this.getLogger().info(Util.msg("[ERROR] No memory available"));
+			return null;
+		}
+		if (bestNeighborNodeRes.getCpu() > neighborNodeRes.getCpu() && 
+				bestNeighborNodeRes.getFreePhysicalMemorySize() > neighborNodeRes.getFreePhysicalMemorySize()) {
+			return bestNeighborNode;
+		} else {
+			if (bestNeighborNodeRes.getFreePhysicalMemorySize() > neighborNodeRes.getFreePhysicalMemorySize()) {
+				return bestNeighborNode;
+			}
+		}
+		return neighborNode;
+	}
+
+	private ResourcesAvailable getEdgeNodeResourcesAvailable(EdgeNode en, String experimentID, String datatypeID, boolean sendMetric) throws Exception {
 		String monitorURL = this.getUrl("http://", en.getIp(), this.getPorts().getLwcoedge_monitor(), 
 				"/monitor/node/resources");
+		this.getLogger().info(Util.msg("[SendToNeighborNode] Accessing the monitor at URL [", monitorURL, "]"));
 		try {
 			ResponseEntity<ResourcesAvailable> httpResp = 
 					Util.sendRequest(monitorURL, Util.getDefaultHeaders(), HttpMethod.GET, null, ResourcesAvailable.class);
@@ -289,39 +340,13 @@ public class P2PCollaborationService extends AbstractService implements IP2Prov 
 
 				return httpResp.getBody();
 			}
-			throw new Exception( Util.msg("[ERROR] ","No Edge Node resources available! [", en.getHostName(), "]"));
+			throw new Exception( Util.msg("[ERROR] No Edge Node resources available! [", en.getHostName(), "]"));
 		} catch (Exception e) {
 			this.getLogger().info(e.getMessage());
-			return null;
+			throw new Exception( Util.msg("[ERROR] Edge Node resources access! [", en.getHostName(), "]"));
 		}
 	}
 	
-	private EdgeNode bestResource(Descriptor datatype, EdgeNode bestNeighborNode, EdgeNode neighborNode, String experimentID, String datatypeID, boolean sendMetric) {
-		if (bestNeighborNode == null) {
-			bestNeighborNode = neighborNode;
-		}
-		// loading resources "/node/resources"
-		ResourcesAvailable bestNeighborNodeRes = this.getEdgeNodeResourcesAvailable(bestNeighborNode, experimentID, datatypeID, sendMetric);
-		if (bestNeighborNodeRes == null)
-			return null;
-		ResourcesAvailable neighborNodeRes = this.getEdgeNodeResourcesAvailable(neighborNode, experimentID, datatypeID, false);
-		if (neighborNodeRes == null)
-			return null;
-
-		Long needMem = this.neededRes.get(datatype.getType().toString()).getPhysicalMemorySize();
-		if (needMem > bestNeighborNodeRes.getFreePhysicalMemorySize() && needMem > neighborNodeRes.getFreePhysicalMemorySize()) {
-			return null;
-		}
-		if (bestNeighborNodeRes.getCpu() > neighborNodeRes.getCpu() && 
-				bestNeighborNodeRes.getFreePhysicalMemorySize() > neighborNodeRes.getFreePhysicalMemorySize()) {
-			return bestNeighborNode;
-		} else {
-			if (bestNeighborNodeRes.getFreePhysicalMemorySize() > neighborNodeRes.getFreePhysicalMemorySize()) {
-				return bestNeighborNode;
-			}
-		}
-		return neighborNode;
-	}
 
 	@Async("ProcessExecutor-P2P")
 	@Override
@@ -484,7 +509,7 @@ public class P2PCollaborationService extends AbstractService implements IP2Prov 
 	 * @param host The node to perform a ping operation.
 	 * @return Communication latency time.
 	 */
-	private long ping(String host, int times, int packetSize) {
+/*	private long ping(String host, int times, int packetSize) {
 		this.pingRequest.setHost (host);
 		this.pingRequest.setPacketSize(packetSize);
 
@@ -498,7 +523,7 @@ public class P2PCollaborationService extends AbstractService implements IP2Prov 
 		Double latency = (double)time/times;
 		return latency.longValue() ;
 	}
-
+*/	
 	@Override
 	public synchronized void setCollaboration(boolean enable) {
 		this.getLogger().info("Configuring the Collaboration process...");
@@ -510,38 +535,17 @@ public class P2PCollaborationService extends AbstractService implements IP2Prov 
 		}
 	}
 	
-/*
-	private static void ping2(String host) {
-		final IcmpPingRequest request = IcmpPingUtil.createIcmpPingRequest ();
-		request.setHost (host);
-		final AsyncCallback<IcmpPingResponse> asyncCallback = new AsyncCallback<IcmpPingResponse> () {
-		      public void onSuccess (final IcmpPingResponse response) {
-		        // log
-		        System.out.println ("response: " + response);
-		      }
-		      public void onFailure (final Throwable throwable) {
-		        // log
-		        throwable.printStackTrace ();
-		      }
-		    };
-		    
-		IcmpPingUtil.executePingRequest(request, asyncCallback);
-	}
-*/
-/*
-	public static void main(String[] args) throws InterruptedException {
-		P2PCollaborationService p = new P2PCollaborationService();
-		for (int i = 0; i < 4; i++) {
+/*	public static void main(String[] args) throws IOException {
+		String host = "google.com";
+		InetAddress geek = InetAddress.getByName(host); 
+		for (int i=0; i<50; i++) {
 			LocalDateTime start = LocalDateTime.now();
-			System.out.println("--------------------");
-			System.out.println(start.toString());
-
-			long latency = p.ping("globo.com", 4, 125);
-			System.out.println("Ping="+latency);
-
-			LocalDateTime finish = start.plus(latency, ChronoField.MILLI_OF_DAY.getBaseUnit());
-			System.out.println(finish.toString());
-
+			System.out.println("Start->"+start);
+		    geek.isReachable(500);
+		    LocalDateTime finish = LocalDateTime.now();
+		    long time = Duration.between(start, finish).toMillis();
+			System.out.println(time);			
+			System.out.println(finish);
 		}
 	}
 */
