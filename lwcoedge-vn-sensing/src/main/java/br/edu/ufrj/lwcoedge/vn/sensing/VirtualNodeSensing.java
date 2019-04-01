@@ -2,7 +2,6 @@ package br.edu.ufrj.lwcoedge.vn.sensing;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -259,11 +258,11 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 	private void sendAllMetrics(Request request, LinkedHashMap<String, String> headers) {
 		this.getLogger().info( Util.msg("Registering metrics of the request [",headers.get("RequestID"),"]..." ));
 		final LocalDateTime start = LocalDateTime.parse(headers.get("StartDateTime"));
-		long latency = 0;
+		long commlatency = 0;
 		try {
-			latency = Long.parseLong(headers.get("CommLatency"));
+			commlatency = Long.parseLong(headers.get("CommLatency"));
 		} catch (Exception e2) {
-			latency = 0;
+			commlatency = 0;
 		}
 
 		long timeSpentWithP2P = 0;
@@ -274,24 +273,22 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 		}
 
 		final LocalDateTime finish = LocalDateTime.now();
-		final LocalDateTime finishWithLatency = finish.plus(latency, ChronoField.MILLI_OF_DAY.getBaseUnit());
 		
 		// The metric TIME_REQ values (id and start date time) come from the HttpHeader
-		metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"),"TIME_REQ", request.getDatatype().getId(), start, finishWithLatency);
+		metricService.sendMetricSummary(managerApiUrl, headers.get("ExperimentID"),"TIME_REQ", request.getDatatype().getId(), start, finish);
 
-		long responseTime = Duration.between(start, finishWithLatency).toMillis();
-		this.getLogger().info( Util.msg("Virtual Node process request [", headers.get("RequestID"), "] finished (+latency)! DT=", finishWithLatency.toString(),
-				" computational time (ms)->", String.valueOf(responseTime) ));
-		
-		long responseTimeNoLatency = Duration.between(start, finish).toMillis();
-		this.getLogger().info( Util.msg("finished (-latency) DT=", finish.toString()));
-		this.getLogger().info( Util.msg("Computational time (ms) (-latency) ->", String.valueOf(responseTimeNoLatency)));
-		this.getLogger().info( Util.msg("Latency measured = ", String.valueOf(latency)));
-		this.getLogger().info( Util.msg("Time of P2P = ", String.valueOf(timeSpentWithP2P)));
+		long responseTime = Duration.between(start, finish).toMillis();
+		long totalResponseTime = responseTime+timeSpentWithP2P+commlatency;
+
+		this.getLogger().info( Util.msg("Virtual Node process request [", headers.get("RequestID"), "] finished! "));
+		this.getLogger().info( Util.msg("(a) Computational time (ms)->", String.valueOf(responseTime)));
+		this.getLogger().info( Util.msg("(b) Latency measured = ", String.valueOf(commlatency)));
+		this.getLogger().info( Util.msg("(c) Time of P2P = ", String.valueOf(timeSpentWithP2P)));
+		this.getLogger().info( Util.msg("Total response time (a+b+c)= ", String.valueOf(totalResponseTime)));
 
 		//checking if the request parameter RTT was fulfilled
 		//the unmet RTTs are measured via M11 metric.
-		if (request.getParam().getRtt() != null && (responseTime+timeSpentWithP2P) > request.getParam().getRtt()) {
+		if (request.getParam().getRtt() != null && totalResponseTime > request.getParam().getRtt()) {
 			metricService.sendMetric(managerApiUrl, headers.get("ExperimentID"),"REQ_RTTH_INV", request.getDatatype().getId());
 		}
 		
