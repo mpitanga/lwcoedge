@@ -4,8 +4,6 @@ import java.lang.annotation.Native;
 import java.util.ArrayList;
 
 import org.apache.commons.collections.map.LRUMap;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Service;
 
 import br.edu.ufrj.lwcoedge.core.cache.Cache;
@@ -16,9 +14,10 @@ import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricAmountAndValue;
 import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricCollected;
 import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricComputationTime;
 import br.edu.ufrj.lwcoedge.core.service.AbstractService;
+import br.edu.ufrj.lwcoedge.core.util.Util;
 
 @Service
-public class ExperimentService extends AbstractService implements ApplicationRunner {
+public class ExperimentService extends AbstractService {
 
 	// This constant defines the amount of metrics collected
 	@Native private static int KEY_ELEMENTS = 200;
@@ -31,11 +30,6 @@ public class ExperimentService extends AbstractService implements ApplicationRun
     private  Cache<String, Cache<String, AbstractMetric>> cacheMetrics = new Cache<String, Cache<String, AbstractMetric>>(TIMETOLIVE, TIMEINTERVAL, KEY_ELEMENTS);
 
 	private boolean active = true;
-
-	@Override
-	public void run(ApplicationArguments args) throws Exception {
-		this.active = true;
-	}
 
 	public void setActive(boolean active) throws Exception  {
 		this.active = active;
@@ -79,13 +73,16 @@ public class ExperimentService extends AbstractService implements ApplicationRun
   
     private void putMetricComputationalTime(String metric, MetricComputationTime mct)  throws Exception {
     	if (!this.isActive()) return;
-    	String metricKey = mct.getId();
+    	
+    	this.getLogger().info( Util.msg("Registering metric [",metric,"]...") );    	
     	Cache<String, AbstractMetric> cache = cacheMetrics.get(metric);
+    	this.getLogger().info( Util.msg("Metric in the cache ", Util.obj2json(cache)));
     	if (cache == null) {
     		cache = new Cache<String, AbstractMetric>(TIMETOLIVE, TIMEINTERVAL, MAX_ELEMENTS);
     	}
-    	cache.put(metricKey, mct);
+    	cache.put(mct.getId(), mct);
     	cacheMetrics.put(metric, cache);
+    	this.getLogger().info( Util.msg("Metric after cache updated ", Util.obj2json(cache)));
     }
 
     private void putMetricAmountAndTimes(String metric, MetricAmountAndTimes maat)  throws Exception {
