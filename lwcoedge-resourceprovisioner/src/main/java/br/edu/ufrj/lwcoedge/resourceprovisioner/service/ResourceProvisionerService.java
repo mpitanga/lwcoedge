@@ -3,8 +3,9 @@ package br.edu.ufrj.lwcoedge.resourceprovisioner.service;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -16,31 +17,40 @@ import br.edu.ufrj.lwcoedge.core.model.Request;
 import br.edu.ufrj.lwcoedge.core.model.ResponseBodyException;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
 import br.edu.ufrj.lwcoedge.core.service.AbstractService;
+import br.edu.ufrj.lwcoedge.core.service.AsyncService;
+import br.edu.ufrj.lwcoedge.core.service.SendMetricService;
 import br.edu.ufrj.lwcoedge.core.util.Util;
-import br.edu.ufrj.lwcoedge.core.util.UtilMetric;
 
 @Service
-public class ResourceProvisionerService extends AbstractService implements IProvisioning, ApplicationRunner {
+@ComponentScan("br.edu.ufrj.lwcoedge.core")
+public class ResourceProvisionerService extends AbstractService implements IProvisioning {
 
-	String VNInstanceCacheUrl, EdgeNodeManagerUrl, P2PCollaborationUrl, P2PCollaborationDSUrl, ManagerApiUrl;
+	@Autowired
+	private AsyncService asyncService;
+	
+	@Autowired
+	SendMetricService metricService;
+	
+	String vnInstanceCacheUrl, edgeNodeManagerUrl, p2pCollaborationUrl, p2pCollaborationDSUrl, managerApiUrl;
 
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void appConfig(ApplicationArguments args) throws Exception {
+		this.getLogger().info("LW-CoEdge loading application settings...\n");
 		if (args != null && !args.getOptionNames().isEmpty()) {
 			try {
 				this.loadComponentsPort(args);
 
-				this.VNInstanceCacheUrl  = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_vn_instancecache(), "/vninstancecache");
-				this.EdgeNodeManagerUrl  = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_edgenode_manager(), "/edgenodemanager");
-				this.P2PCollaborationUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_p2pcollaboration(), "/p2pcollaboration/sendToNeighborNode");
-				this.P2PCollaborationDSUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_p2pcollaboration(), "/p2pcollaboration/registerVNtoDataSharing");
-				this.ManagerApiUrl       = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
+				this.vnInstanceCacheUrl  = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_vn_instancecache(), "/vninstancecache");
+				this.edgeNodeManagerUrl  = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_edgenode_manager(), "/edgenodemanager");
+				this.p2pCollaborationUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_p2pcollaboration(), "/p2pcollaboration/sendToNeighborNode");
+				this.p2pCollaborationDSUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_p2pcollaboration(), "/p2pcollaboration/registerVNtoDataSharing");
+				this.managerApiUrl       = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
 				
-				this.getLogger().info(Util.msg("VNInstance cache url = ", this.VNInstanceCacheUrl));
-				this.getLogger().info(Util.msg("EdgeNodeManager url = ", this.EdgeNodeManagerUrl));
-				this.getLogger().info(Util.msg("P2PCollaboration url = ", this.P2PCollaborationUrl));
-				this.getLogger().info(Util.msg("P2PCollaboration (DS) url = ", this.P2PCollaborationDSUrl));
-				this.getLogger().info(Util.msg("ManagerApi url = ", this.ManagerApiUrl));
+				this.getLogger().info(Util.msg("VNInstance cache url = ", this.vnInstanceCacheUrl));
+				this.getLogger().info(Util.msg("EdgeNodeManager url = ", this.edgeNodeManagerUrl));
+				this.getLogger().info(Util.msg("P2PCollaboration url = ", this.p2pCollaborationUrl));
+				this.getLogger().info(Util.msg("P2PCollaboration (DS) url = ", this.p2pCollaborationDSUrl));
+				this.getLogger().info(Util.msg("ManagerApi url = ", this.managerApiUrl));
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -50,20 +60,10 @@ public class ResourceProvisionerService extends AbstractService implements IProv
 			this.getLogger().info("No application settings founded!");
 			System.exit(-1);
 		}
+		this.getLogger().info("");
+		this.getLogger().info("LW-CoEdge application settings loaded.\n");
 	}
 	
-	private void registerRequestSizeMetric(MetricIdentification id, Long valueOf) throws Exception {
-		new Thread(()-> {
-			//Bandwidth consumed
-			try {
-				UtilMetric.sendMetricSummaryValue(this.ManagerApiUrl, id.getKey(), id.toString(), valueOf);
-			} catch (Exception e) {
-				String msg = Util.msg("[ERROR] ","Error submitting the metric [", id.toString(), "] to the registry.", e.getMessage());
-				this.getLogger().info(msg);
-			}
-		}).start();
-	}
-
 	@Override
 	public synchronized VirtualNode provisioning(VirtualNode currentVirtualNode, Request request, String... args)  throws Exception {
 		this.getLogger().info("--------------------------------");
@@ -85,7 +85,7 @@ public class ResourceProvisionerService extends AbstractService implements IProv
 				this.getLogger().info(
 					Util.msg("Checking again if there is a VN instance into the cache to meet the request ->", headers.get("RequestID"))
 				);
-				ResponseEntity<VirtualNode> httpRespVN = Util.sendRequest( Util.msg(this.VNInstanceCacheUrl, "/search"),
+				ResponseEntity<VirtualNode> httpRespVN = Util.sendRequest( Util.msg(this.vnInstanceCacheUrl, "/search"),
 						Util.getDefaultHeaders(headers), HttpMethod.POST, request.getDatatype(), VirtualNode.class);
 
 				if (httpRespVN.hasBody()) {
@@ -108,12 +108,17 @@ public class ResourceProvisionerService extends AbstractService implements IProv
 				throw new RuntimeException(msg);
 			}
 		}
-		this.getLogger().info("Starting provisioning process...");
+		this.getLogger().info( 
+				Util.msg("Starting provisioning process to the Request [", 
+						headers.get("RequestID") ,"]...",
+						" StartDatetime =", headers.get("StartDateTime")
+				) 
+		);
 		try {
 			boolean hasResource = true;
 			try {
 				ResponseEntity<Boolean> httpRespResource = 
-						Util.sendRequest( Util.msg(this.EdgeNodeManagerUrl, "/hasResource"), 
+						Util.sendRequest( Util.msg(this.edgeNodeManagerUrl, "/hasResource"), 
 								Util.getDefaultHeaders(headers), HttpMethod.POST, request.getDatatype(), Boolean.class);				
 				hasResource = httpRespResource.getBody();
 
@@ -135,7 +140,7 @@ public class ResourceProvisionerService extends AbstractService implements IProv
 					//Deploy a new Virtual Node container
 					ResponseEntity<VirtualNode> httpRespVN;
 					try {
-						httpRespVN = Util.sendRequest( Util.msg(this.EdgeNodeManagerUrl, "/containerDeploy"),
+						httpRespVN = Util.sendRequest( Util.msg(this.edgeNodeManagerUrl, "/containerDeploy"),
 								Util.getDefaultHeaders(headers), HttpMethod.POST, request.getDatatype(), VirtualNode.class);
 					} catch (Exception e) {
 						String exceptMsg;
@@ -152,23 +157,17 @@ public class ResourceProvisionerService extends AbstractService implements IProv
 					if (httpRespVN.hasBody()) {
 						if (sendMetricEnable) {
 							//Data consumed to received the answer
-							try {
-								MetricIdentification id = new MetricIdentification(headers.get("ExperimentID"), "DT_RESP_STARTC", null, request.getDatatype().getId());
-								
-								Long valueOf = Util.getObjectSize(httpRespVN.getHeaders()) +
-										Util.getObjectSize(httpRespVN.getBody());
+							Long valueOf = Util.getObjectSize(httpRespVN.getHeaders()) +
+									Util.getObjectSize(httpRespVN.getBody());
 
-								registerRequestSizeMetric(id, valueOf);
-							} catch (Exception e) {
-								this.getLogger().info(e.getMessage());
-							}
+							metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_RESP_STARTC", request.getDatatype().getId(), valueOf);
 						}
 
 						//Registering the new instance of the VN into the cache
 						VirtualNode vn = httpRespVN.getBody();
 						this.getLogger().info(Util.msg("Registering Virtual Node instance ", vn.getId(), " into the Repository..."));
 						try {
-							Util.sendRequest( Util.msg(this.VNInstanceCacheUrl, "/register"), 
+							Util.sendRequest( Util.msg(this.vnInstanceCacheUrl, "/register"), 
 									Util.getDefaultHeaders(), HttpMethod.POST, vn, Void.class);							
 						} catch (Exception e) {
 							String exceptMsg;
@@ -185,12 +184,14 @@ public class ResourceProvisionerService extends AbstractService implements IProv
 						this.getLogger().info( Util.msg("VN registered -> ", vn.toString()));
 							
 						//Registering the new VN for data sharing collaboration
-						try {
-							registerToDataSharing(vn, headers);
-						} catch (Exception e) {
-							String msg = Util.msg("[ERROR] ", e.getMessage());
-							this.getLogger().info(msg);
-						}							
+						asyncService.run(()->{
+							try {
+								registerToDataSharing(vn, headers);
+							} catch (Exception e) {
+								String msg = Util.msg("[ERROR] ", e.getMessage());
+								this.getLogger().info(msg);
+							}
+						});
 
 						this.getLogger().info("Provisioning process finished!");
 						this.getLogger().info("------------------------------");
@@ -204,108 +205,110 @@ public class ResourceProvisionerService extends AbstractService implements IProv
 				} else {
 					//Reconfigure the Virtual Node container
 					try {
-						ResponseEntity<Boolean> httpResp = Util.sendRequest(this.EdgeNodeManagerUrl.concat("/scaleUp"), 
-								Util.getDefaultHeaders(headers), HttpMethod.POST, currentVirtualNode, Boolean.class);
+						this.getLogger().info("Provisioning (scale-up) process started!");
+						ResponseEntity<Boolean> httpResp = 
+								Util.sendRequest( Util.msg(this.edgeNodeManagerUrl, "/scaleUp"), 
+										Util.getDefaultHeaders(headers), HttpMethod.POST, currentVirtualNode, Boolean.class);
+
 						if (httpResp.hasBody() && httpResp.getBody()) {
-							this.getLogger().info("Provisioning process finished!");
+							this.getLogger().info("Provisioning (scale-up) process finished!");
 							this.getLogger().info("------------------------------");
 
 							return currentVirtualNode;					
+						} else {
+							String msg = "[WARNING] The VN container cannot be scaled up! Invoking the P2P Collaboration";
+							this.getLogger().info(msg);
 						}
 					} catch (Exception e2) {
 						String msg = Util.msg("[ERROR] ","Invoking the Edge Node manager component (scale-up)!\n", e2.getMessage());
 						this.getLogger().info(msg);
-						throw new Exception(msg);
+						//throw new Exception(msg);
 					}
-					String msg = "[ERROR] VN container cannot scale-up!";
-					this.getLogger().info(msg);
-					throw new Exception(msg);						
 				}
 			}
 			//Collaboration with the neighborhood for finding an Edge Node to meet the request
-			registerToCollaboration(request, headers);
-		} catch (Exception e) {
-			
-			// The request did not submit to collaboration
-			if (args.length > 0) {
-				MetricIdentification id = 
-						new MetricIdentification(
-								new MetricIdentification(args[0]).getExperiment(),
-								"REQ_NOT_MET", null, request.getDatatype().getId()
-						);
+			asyncService.run(()->{
 				try {
-					UtilMetric.sendMetric(this.ManagerApiUrl, id.getKey(), id.toString(), 1);
-				} catch (Exception e1) {
-					this.getLogger().info( 
-							Util.msg("[ERROR] ","Error submitting the metric [", id.toString(), "] to the registry.", e1.getMessage())
-					);
+					registerToCollaboration(request, headers, sendMetricEnable);
+				} catch (Exception e) {
+					throw new RuntimeException(e.getMessage());
 				}
+			});
+			
+		} catch (Exception e) {
+
+			// The request did not submit to collaboration
+			this.getLogger().info(e.getMessage());
+			if (sendMetricEnable) {
+				metricService.sendMetric(this.managerApiUrl, headers.get("ExperimentID"), "REQ_NOT_MET", request.getDatatype().getId());
+			}
+			try {
+				Util.callBack(request.getCallback(), new String("ERROR")); // send an empty answer to the request issuer
+			} catch (Exception e1) {
+				this.getLogger().info(Util.msg("[ERROR] ","The callBack for the Application failed!\n", e1.getMessage()));
 			}
 
-			this.getLogger().info("Provisioning process finished!");
+			this.getLogger().info("Provisioning process finished with ERROR!");
 			this.getLogger().info("------------------------------");
-			throw e;
+//			throw e;
 		}
 		return null;
 	}
 
 	private void registerToDataSharing(VirtualNode vn, LinkedHashMap<String, String> headers) throws Exception {
 		this.getLogger().info(Util.msg("Registering VN [", vn.getId(), "] to the data sharing."));
-		new Thread(()->{
+		try {
+			Util.sendRequest(this.p2pCollaborationDSUrl, 
+					Util.getDefaultHeaders(headers), HttpMethod.POST, vn, Void.class);
+		} catch (HttpServerErrorException e) {
+			String exceptMsg;
 			try {
-				Util.sendRequest(this.P2PCollaborationDSUrl, 
-						Util.getDefaultHeaders(headers), HttpMethod.POST, vn, Void.class);
-			} catch (HttpServerErrorException e) {
-				String exceptMsg;
-				try {
-					ResponseBodyException rbe = Util.json2obj(e.getResponseBodyAsString(), ResponseBodyException.class);
-					exceptMsg = rbe.getMessage();
-				} catch (Exception e1) {
-					exceptMsg = e1.getMessage();
-				}
-				String msg = Util.msg("[ERROR] ", "Invoking the P2P collaboration component (data sharing)!\n",exceptMsg);
-				this.getLogger().info(msg);
-				throw new RuntimeException (msg);
+				ResponseBodyException rbe = Util.json2obj(e.getResponseBodyAsString(), ResponseBodyException.class);
+				exceptMsg = rbe.getMessage();
+			} catch (Exception e1) {
+				exceptMsg = e1.getMessage();
 			}
-		}).start();
+			String msg = Util.msg("[ERROR] ", "Invoking the P2P collaboration component (data sharing) to the request [",
+					headers.get("RequestID"),
+					"]\n",exceptMsg);
+			this.getLogger().info(msg);
+			throw new Exception (msg);
+		}
 	}
-	
-	private void registerToCollaboration(Request request, LinkedHashMap<String, String> headers) throws Exception {
-		new Thread(()->{
-			this.getLogger().info(Util.msg("Invoking P2P collaboration for the request [", headers.get("RequestID"), "]!"));
-			MetricIdentification idOld = new MetricIdentification(headers.get("RequestID"));
+
+	private void registerToCollaboration(Request request, LinkedHashMap<String, String> headers, boolean sendMetricEnable) {
+		MetricIdentification idOld = new MetricIdentification(headers.get("RequestID"));
+		try {
+			MetricIdentification id = 
+					new MetricIdentification(idOld.getExperiment(), "TIME_SPENT_FW", idOld.getVariation(), request.getDatatype().getId());
+			headers.put("RequestID", id.toString()); //a new RequestID is defined before sending the request to collaboration
+			headers.put("StartCommDateTime", LocalDateTime.now().toString()); //Starting Communication date and time
 			try {
-				MetricIdentification id = 
-							new MetricIdentification(idOld.getExperiment(), "TIME_SPENT_FW", idOld.getVariation(), request.getDatatype().getId());
-				headers.put("RequestID", id.toString()); //new RequestID to identify the collaboration
-				headers.put("StartCommDateTime", LocalDateTime.now().toString()); //Starting Communication date and time
-				try {
-					Util.sendRequest( this.P2PCollaborationUrl, 
-							Util.getDefaultHeaders(headers), HttpMethod.POST, request, Void.class);
-				} catch (HttpServerErrorException e) {
-					ResponseBodyException rbe = Util.json2obj(e.getResponseBodyAsString(), ResponseBodyException.class);
-					throw new Exception(rbe.getMessage());
-				}
-
-			} catch (Exception e) {
-				String msg = Util.msg("[ERROR] ", "Invoking the P2P collaboration component (sendToNeighborNode)!\n", e.getMessage());
-				this.getLogger().info(msg);
-
-				// The request did not submit to collaboration
-				MetricIdentification id = 
-							new MetricIdentification(
-									idOld.getExperiment(),
-									"REQ_NOT_MET", null, request.getDatatype().getId()
-							);
-				try {
-					UtilMetric.sendMetric(this.ManagerApiUrl, id.getKey(), id.toString(), 1);
-				} catch (Exception e1) {
-					this.getLogger().info( 
-						Util.msg("[ERROR] ","Error submitting the metric [", id.toString(), "] to the registry.", e1.getMessage())
-					);
-				}
-				throw new RuntimeException (msg);
+				this.getLogger().info(
+						Util.msg("Invoking P2P collaboration for the request [", headers.get("RequestID"), "]! StartDatetime = ", headers.get("StartDateTime"),"\n")
+						);
+				Util.sendRequest( this.p2pCollaborationUrl, 
+						Util.getDefaultHeaders(headers), HttpMethod.POST, request, Void.class);
+			} catch (HttpServerErrorException e) {
+				ResponseBodyException rbe = Util.json2obj(e.getResponseBodyAsString(), ResponseBodyException.class);
+				throw new Exception(rbe.getMessage());
 			}
-		}).start();
+
+		} catch (Exception e) {
+			String msg = Util.msg("[ERROR] ", "Invoking the P2P collaboration component (sendToNeighborNode)!\n", e.getMessage());
+			//throw new Exception (msg);
+			this.getLogger().info(msg);
+			
+			if (sendMetricEnable) {
+				metricService.sendMetric(this.managerApiUrl, headers.get("ExperimentID"), "REQ_NOT_MET", request.getDatatype().getId());
+			}
+			
+			try {
+				Util.callBack(request.getCallback(), new String("ERROR")); // send an empty answer to the request issuer
+			} catch (Exception e1) {
+				this.getLogger().info(Util.msg("[ERROR] ","The callBack for the Application failed!\n", e1.getMessage()));
+			}
+
+		}
 	}
 }
