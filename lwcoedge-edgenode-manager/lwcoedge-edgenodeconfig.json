@@ -1,14 +1,33 @@
 {
   "edgeNode": {
-    "hostName": "MPITANGADELL",
-    "ip": "192.168.146.1",
+    "hostName": "en2",
+    "ip": "192.168.237.130",
     "coordinates": "-22.8156986,-43.4265209",
-    "connectedDevices": [{"value":"DeviceID3"}],
+    "connectedDevices": [{"value":"DeviceID1"},{"value":"DeviceID2"},{"value":"DeviceID3"},{"value":"DeviceID4"}],
     "neighborhood": [
       {
+          "hostName": "EN0",
+          "ip": "192.168.237.128",
+          "coordinates": "-30.0,-63.0",
+          "connectedDevices": [{"value":"DeviceID1"}]
+      },
+      {
           "hostName": "EN1",
-          "ip": "192.168.14.135",
-          "coordinates": "-30.0,-63.0"
+          "ip": "192.168.237.129",
+          "coordinates": "-30.0,-63.0",
+          "connectedDevices": [{"value":"DeviceID1"},{"value":"DeviceID2"}]
+      },
+      {
+          "hostName": "EN3",
+          "ip": "192.168.237.131",
+          "coordinates": "-30.0,-63.0",
+          "connectedDevices": [{"value":"DeviceID3"},{"value":"DeviceID4"}]
+      },
+      {
+          "hostName": "EN4",
+          "ip": "192.168.237.132",
+          "coordinates": "-30.0,-63.0",
+          "connectedDevices": [{"value":"DeviceID4"}]
       }
     ]
   }

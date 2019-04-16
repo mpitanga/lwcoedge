@@ -1,0 +1,14 @@
+{
+	"id": {
+		"where": "UFRJ",
+		"who": "UbicompLab",
+		"what": "temperature"
+	},
+	"description": "Laboratory temperature. Sensor type: LM35DZ; Celsius degree; Range: -55 a 150 degree; Precision: 0,5",
+	"type": "SIMPLE",
+	"element": [
+		{
+			"value": "DeviceID5"
+		}
+	]
+}

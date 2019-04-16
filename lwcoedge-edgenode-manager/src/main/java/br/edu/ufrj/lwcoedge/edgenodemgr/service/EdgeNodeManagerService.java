@@ -3,10 +3,6 @@ package br.edu.ufrj.lwcoedge.edgenodemgr.service;
 import java.io.File;
 import java.lang.annotation.Native;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -22,11 +18,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import br.edu.ufrj.lwcoedge.core.cache.Cache;
 import br.edu.ufrj.lwcoedge.core.interfaces.IEdgeMgr;
 import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricIdentification;
-import br.edu.ufrj.lwcoedge.core.model.ConnectedDevices;
 import br.edu.ufrj.lwcoedge.core.model.Datatype;
 import br.edu.ufrj.lwcoedge.core.model.Descriptor;
 import br.edu.ufrj.lwcoedge.core.model.EdgeNode;
-import br.edu.ufrj.lwcoedge.core.model.Element;
 import br.edu.ufrj.lwcoedge.core.model.NeededResources;
 import br.edu.ufrj.lwcoedge.core.model.NeededResourcesCache;
 import br.edu.ufrj.lwcoedge.core.model.Resources;
@@ -113,20 +107,8 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr 
 
 	@Override
 	public boolean hasConnectedDevices(Descriptor datatype, String... args) {
-//		this.getLogger().info("Request size ="+args[3]);
-		if (datatype.getType() == Type.COMPLEX)
-			return true;
-
-		Function<ConnectedDevices,List<String>> deviceKey=p -> Arrays.asList(p.getValue());
-		Function<Element,List<String>> elementKey=p -> Arrays.asList(p.getValue());
-
-		EdgeNode en = this.configEdgenode.getEdgeNode();
-		
-		boolean exists=
-				datatype.getElement().stream().map(elementKey)
-				.anyMatch(en.getConnectedDevices().stream().map(deviceKey).collect(Collectors.toSet())::contains);
-
-		return exists;
+		EdgeNode en = this.configEdgenode.getEdgeNode();	
+		return en.hasConnectedDevices(datatype);
 	}
 	
 	@Override
@@ -304,7 +286,7 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr 
 	private void startContainer(VirtualNode vn) throws Exception {
 		String command = this.getJVMString(vn);
 		this.getLogger().info( Util.msg("Starting ",command));
-		Util.exec(command, 5); //// start container and wait 5 seconds
+		Util.exec(command, 0);
 		String vnURL = getUrl("http://", vn.getHostName(), vn.getPort(), "/vnsensing/isalive");
 		int i=0;
 		boolean vnStart = false;
@@ -397,13 +379,21 @@ public class EdgeNodeManagerService extends AbstractService implements IEdgeMgr 
 		this.getLogger().info("Configuration finished.");
 	}
 
-/*	public static void main(String[] args) {
+/*
+	public static void main(String[] args) {
 		String fileName = "F:\\thesis\\workspace_lwcoedge\\lwcoedge-edgenode-manager\\lwcoedge-edgenodeconfig.json";
+		String fileName2 = "F:\\thesis\\workspace_lwcoedge\\lwcoedge-edgenode-manager\\lwcoedge-descriptor.json";
 		ObjectMapper objectMapper = new ObjectMapper();
 		ConfigEdgenode configEdgenode;
+		Descriptor datatype;
 		try {
 			configEdgenode = objectMapper.readValue(new File(fileName), ConfigEdgenode.class);
 			System.out.println(configEdgenode.toString());
+			datatype = objectMapper.readValue(new File(fileName2), Descriptor.class);
+			System.out.println(datatype.toString());
+			
+			System.out.println(configEdgenode.getEdgeNode().hasConnectedDevices(datatype));
+			
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 		} catch (JsonMappingException e) {
