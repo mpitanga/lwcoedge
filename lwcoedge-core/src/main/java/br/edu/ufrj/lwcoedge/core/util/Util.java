@@ -16,6 +16,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -24,14 +25,47 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Util {
 
-	static private RestTemplate restTemplate = new RestTemplate();
+	private static RestTemplate restTemplate = null;
 	
-/*	public static void main(String[] args) {
-		String[] headers = {"A", "A", "A", "A", "A"};
-		HttpHeaders h = Util.getDefaultHeaders(5.0, headers);
+/*	
+	private static HttpComponentsClientHttpRequestFactory getHttpComponentsClientHttpRequestFactory(int timeout, int poolMax) {
+	    PoolingHttpClientConnectionManager poolingConnectionManager = new PoolingHttpClientConnectionManager();
+	    poolingConnectionManager.setMaxTotal(poolMax);
+	    CloseableHttpClient client = HttpClientBuilder.create().setConnectionManager(poolingConnectionManager).build();
+	    HttpComponentsClientHttpRequestFactory clientHttpRequestFactory =
+	        new HttpComponentsClientHttpRequestFactory(client);
+	    clientHttpRequestFactory.setConnectTimeout(timeout);
+	    clientHttpRequestFactory.setConnectionRequestTimeout(timeout);
+	    return clientHttpRequestFactory;
 	}
-*/	
+
 	
+	public static RestTemplate getRestTemplate(int timeout) {
+		if (restTemplate == null) {
+			restTemplate = 
+					new RestTemplate(
+							getHttpComponentsClientHttpRequestFactory(timeout, 200)
+					);			
+		}
+		((HttpComponentsClientHttpRequestFactory)restTemplate.getRequestFactory()).setConnectTimeout(timeout);
+		((HttpComponentsClientHttpRequestFactory)restTemplate.getRequestFactory()).setConnectionRequestTimeout(timeout);		
+		return restTemplate;
+	}
+	
+	//SimpleClientHttpRequestFactory
+*/
+
+	public static RestTemplate getRestTemplate(int timeout) {
+		if (restTemplate == null) {
+			restTemplate = 
+					new RestTemplate(
+							new SimpleClientHttpRequestFactory()
+					);			
+		}
+		((SimpleClientHttpRequestFactory)restTemplate.getRequestFactory()).setConnectTimeout(timeout);
+		return restTemplate;
+	}
+
 	public static HttpHeaders getDefaultHeaders() {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
@@ -55,16 +89,21 @@ public class Util {
 	 * @return
 	 * @throws Exception
 	 */
-	public static <T> ResponseEntity<T> sendRequest(String URL, HttpHeaders headers, HttpMethod method, Object data, Class<T> response) /*throws Exception*/ {
+	public static <T> ResponseEntity<T> sendRequest(String URL, HttpHeaders headers, HttpMethod method, Object data, Class<T> response, Integer... args) /*throws Exception*/ {
+		int timeout = (args.length==1) ? args[0] : 300;
+		if (headers == null) {
+			headers = getDefaultHeaders();
+		}
+		RestTemplate rt = getRestTemplate(timeout);
 		HttpEntity<Object> requestEntity = new HttpEntity<Object>(data, headers);
-		ResponseEntity<T> resp = restTemplate.exchange(URL, method, requestEntity, response);
+		ResponseEntity<T> resp = rt.exchange(URL, method, requestEntity, response);
 		if (resp.getStatusCode() != HttpStatus.OK) {
 			//throw new Exception ("Http Error! "+resp.getStatusCodeValue()+"\n"+resp.getStatusCode().getReasonPhrase());
 			throw new HttpServerErrorException(resp.getStatusCode(),
 					msg("Http Error! ", Integer.toString(resp.getStatusCodeValue()), 
 							"\n", resp.getStatusCode().getReasonPhrase())
 				);
-		}		
+		}
 		return resp;
 	}
 
@@ -91,7 +130,7 @@ public class Util {
 	 * 
 	 * https://www.javaworld.com/article/2071275/core-java/when-runtime-exec---won-t.html?page=2
 	 */
-	public static void exec(String command, long seconds) throws IOException, InterruptedException {
+	public static void exec(String command, long miliseconds) throws IOException, InterruptedException {
 		FileOutputStream fos = new FileOutputStream(Thread.currentThread().getName());
 
 		Runtime r = Runtime.getRuntime();
@@ -107,8 +146,10 @@ public class Util {
 	        // kick them off
 	        errorGobbler.start();
 	        outputGobbler.start();
-		}    
-		proc.waitFor(seconds, TimeUnit.SECONDS);
+		}
+		if (miliseconds>0){
+			proc.waitFor(miliseconds, TimeUnit.MILLISECONDS);
+		}
 		fos.flush();
         fos.close();
 	}

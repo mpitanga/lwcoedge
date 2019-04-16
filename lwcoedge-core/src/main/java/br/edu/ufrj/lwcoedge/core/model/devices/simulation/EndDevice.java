@@ -50,7 +50,7 @@ public class EndDevice extends AbstractDevice implements Serializable {
 	// Direct access
 	public Data getData() {
 		try {
-			Thread.sleep(30);
+			Thread.sleep(75);
 			this.generateRandomData();
 			return this.data;
 		} catch (InterruptedException e) {
@@ -107,31 +107,22 @@ public class EndDevice extends AbstractDevice implements Serializable {
 
 	//Simulates the device sending his sensing data to the internal database..
 	private void run() {
-		new Thread(() -> {
-			while (!Thread.currentThread().isInterrupted()) {
-				this.generateRandomData();
-				this.logger.info("Sending data ["+data.toString()+" to the internal database...");
-				try {
-					Thread.sleep(this.interval);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}			
-			}			
-		}).start();
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (!Thread.currentThread().isInterrupted()) {
+					generateRandomData();
+					logger.info("Sending data ["+data.toString()+" to the internal database...");
+					try {
+						Thread.sleep(interval);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}			
+				}				
+			}
+		});
+		t.setDaemon(true);
+		t.start();
 	}
 
-/*
-	public static void main(String[] args) {
-		EndDevice ed = new EndDevice("DeviceID1");
-		while (true) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
-*/
-	
 }
