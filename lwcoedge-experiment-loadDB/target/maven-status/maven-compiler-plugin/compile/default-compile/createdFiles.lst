@@ -1,0 +1,8 @@
+br\edu\ufrj\lwcoedge\experiment\db\dao\MetricsDAO.class
+br\edu\ufrj\lwcoedge\experiment\db\entities\Metricamountandtime.class
+br\edu\ufrj\lwcoedge\experiment\db\service\ServiceDB.class
+br\edu\ufrj\lwcoedge\experiment\db\entities\Metricamountandvalue.class
+br\edu\ufrj\lwcoedge\experiment\db\entities\Metricamount.class
+br\edu\ufrj\lwcoedge\experiment\db\LwcoedgeExperimentLoadDbApplication.class
+br\edu\ufrj\lwcoedge\experiment\db\entities\Metriccomputationtime.class
+br\edu\ufrj\lwcoedge\experiment\db\service\LoadtoDB.class

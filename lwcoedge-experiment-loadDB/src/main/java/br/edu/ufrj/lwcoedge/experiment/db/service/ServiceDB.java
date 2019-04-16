@@ -71,8 +71,9 @@ public class ServiceDB {
 						||metric.equals("R_ENDEV")||metric.equals("R_MEM_CACHE")||metric.equals("REQ_RTTH_INV")) {
 					loadJsonMetricAmountToDB(experimentName, f, en, keyMetricName, variation);
 				} else {
-					//3,5,6
-					if (metric.equals("TIME_REQ")||metric.equals("TIME_SPENT_FW")||metric.equals("COMM_TIME")) {
+					//3,5,6 
+					if (metric.equals("TIME_REQ")||metric.equals("TIME_SPENT_FW")||metric.equals("COMM_TIME")
+							||metric.equals("TIME_SELECT_NB")) {
 						loadJsonMetricAmountandTimeToDB(experimentName, f, en, keyMetricName, variation);
 					} else {
 						//M7 e M12
