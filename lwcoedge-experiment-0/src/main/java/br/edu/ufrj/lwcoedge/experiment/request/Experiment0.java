@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.icmp4j.IcmpPingRequest;
+import org.icmp4j.IcmpPingResponse;
+import org.icmp4j.IcmpPingUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.http.HttpHeaders;
@@ -77,7 +80,8 @@ public class Experiment0 extends AbstractService  {
 		String[] datatypeids = config.getDatatypeids();
 		int idxdatatype = config.getIdxdatatype();
 		Collaboration collabActivated = config.getCollaboration();
-				
+		int waitToGenerate = (config.getWaittogenerate() == null || config.getWaittogenerate() == 0) ? 5 * 60 : config.getWaittogenerate();
+
 		if (collabActivated == null) {
 			this.getLogger().info( "The parameter [Collaboration] was not configured!" );
 			System.exit(1);
@@ -101,7 +105,8 @@ public class Experiment0 extends AbstractService  {
 				randomFreshness,
 				datatypeids,
 				idxdatatype,
-				collabActivated
+				collabActivated,
+				waitToGenerate
 		);
 	}
 
@@ -118,7 +123,7 @@ public class Experiment0 extends AbstractService  {
 			int maxresponsetime,
 			boolean randomFreshness,
 			String[] datatypeIds, int idxdatatype,
-			Collaboration collabActivated) throws JsonParseException, JsonMappingException, IOException {
+			Collaboration collabActivated, int waitToGenerate) throws JsonParseException, JsonMappingException, IOException {
 	
 		if (executeExperiment) {
 			LocalDateTime startEx = LocalDateTime.now();
@@ -129,6 +134,10 @@ public class Experiment0 extends AbstractService  {
 				totalOfRequests[i] = requestVariation*(i+1);
 			}
 
+			if (clearMetrics) {
+				clearCacheMetrics(EdgeNodes, "E0", -1);
+			}
+
 			for(int x=0;x<times;x++) {
 				activateCollaboration(EdgeNodes, collabActivated.isActive(), idxHost);
 				//activateDataSharing(EdgeNodes, collabActivated.isActive());
@@ -137,17 +146,19 @@ public class Experiment0 extends AbstractService  {
 				
 				// Experiment - E1, E2,...
 				String experimentCode = "E"+idx;
-
+/*
 				if (clearMetrics) {
-					clearCacheMetrics(EdgeNodes, experimentCode, -1/*idxHost*/);
+					clearCacheMetrics(EdgeNodes, experimentCode, -1);
 				}
-
+*/
 				// alterar para o nome do experimento variar de acordo com X...E1,E2,E3...
 				startExperiment1(EdgeNodes, EntryPointPort, callBackURL, experimentCode, cycles, requestVariation, datatypeIds, maxfreshness,
 						maxresponsetime, randomFreshness, idxHost, idxdatatype, totalOfRequests, collabActivated);
+/*
 				if (generateResults) {
-					generateFileResults(path, EdgeNodes, -1/*idxHost*/);
+					generateFileResults(path, EdgeNodes, -1idxHost, waitToGenerate);
 				}
+*/
 			}
 			LocalDateTime finishEx = LocalDateTime.now();
 			Duration d = Duration.between(startEx, finishEx);
@@ -159,21 +170,10 @@ public class Experiment0 extends AbstractService  {
 			this.getLogger().info("Time elapsed (ms)  -> "+d.toMillis());
 			this.getLogger().info("----------------------------------");
 
-		} else {
-			if (generateResults) {
-				generateFileResults(path, EdgeNodes, idxHost);
-			}
 		}
-/*		if (generateResults) {
-			for (String en : EdgeNodes) {				
-				String experimentPath = Util.msg(path, en, "/");
-				File folder = new File(experimentPath);
-				if (folder.exists()) {
-					generateGraphFromResult("E", experimentPath, times, cycles, requestVariation, datatypeIds);
-				}
-			}
+		if (generateResults) {
+			generateFileResults(path, EdgeNodes, idxHost, waitToGenerate);
 		}
-*/
 	}
 
 	@Async("threadPoolTaskExecutor_Experiment")
@@ -231,6 +231,22 @@ public class Experiment0 extends AbstractService  {
 		this.getLogger().info("----------------------------------");
 	}
 	
+	final IcmpPingRequest pingRequest = IcmpPingUtil.createIcmpPingRequest();
+	private long ping(String host, int times, int packetSize) {
+		this.pingRequest.setHost (host);
+		this.pingRequest.setPacketSize(packetSize);
+
+		int time = 0;
+		// repeat a few times
+		for (int count = 0; count < times; count ++) {
+			// delegate
+			final IcmpPingResponse response = IcmpPingUtil.executePingRequest(this.pingRequest);
+			time += response.getRtt();
+		}
+		Double latency = (double)time/times;
+		return latency.longValue() ;
+	}
+	
 	private void sendRequest1(String[] EdgeNodes, String lwcoedgeHostPort, String experiment, String[] datatypeIds, 
 			int maxFreshness, int maxResponsetime, String callback, int variation, boolean randomFreshness, 
 			int idxHost, int idxdatatype, int activeRequests, Collaboration collabActivated) {
@@ -242,6 +258,10 @@ public class Experiment0 extends AbstractService  {
 			int total = 0;
 			boolean executeActivate = true;
 
+			long latency = ping (EdgeNodes[0], 4, 32);
+			if (latency > 50)
+				latency = 0;
+			
 			for(int i=0; i<variation; i++) {
 				final int var = i+1;
 				
@@ -253,32 +273,25 @@ public class Experiment0 extends AbstractService  {
 					}					
 				}
 				
-//				Thread t = new Thread(()->{
-					String hostIP = (idxHost == -1) 
-							? EdgeNodes[generateNumber(0, EdgeNodes.length)]
-							: EdgeNodes[idxHost];
-					String URL = Util.msg("http://", hostIP, ":", lwcoedgeHostPort, "/lwcoedge/request/send");
-					int idxDT = (idxdatatype == -1)
-							? generateNumber(0, datatypeIds.length)
-							: idxdatatype;
-					int freshness = (randomFreshness) ? generateNumber(1000, maxFreshness) : maxFreshness;
-					Request request = requestGenerator(datatypeIds[idxDT], freshness, maxResponsetime, callback);
-					this.getLogger().info( Util.msg("Datatype id: ",datatypeIds[idxDT], " Freshness: ", String.valueOf(freshness)) );
-					this.getLogger().info( Util.msg("Submitting request -> ", experiment, " - ", String.valueOf(var), " of ", String.valueOf(variation)) );
-					HttpHeaders headers = Util.getDefaultHeaders();
-					headers.add("ExperimentID", Util.msg(experiment, ".", String.valueOf(variation)));
-					headers.add("ExperimentVar", String.valueOf(var));
-					try {
-						Util.sendRequest(URL, headers, HttpMethod.POST, request, Void.class);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					this.getLogger().info("Request submitted!");					
-//				});
-//				t.start();
-//				if (i>0) {
-//					Thread.sleep(50);
-//				}
+				String hostIP = (idxHost == -1) 
+						? EdgeNodes[generateNumber(0, EdgeNodes.length)]
+								: EdgeNodes[idxHost];
+				String URL = Util.msg("http://", hostIP, ":", lwcoedgeHostPort, "/lwcoedge/request/send");
+				int idxDT = (idxdatatype == -1) ? generateNumber(0, datatypeIds.length) : idxdatatype;
+				int freshness = (randomFreshness) ? generateNumber(1000, maxFreshness) : maxFreshness;
+				Request request = requestGenerator(datatypeIds[idxDT], freshness, maxResponsetime, callback);
+				this.getLogger().info( Util.msg("Datatype id: ",datatypeIds[idxDT], " Freshness: ", String.valueOf(freshness)) );
+				this.getLogger().info( Util.msg("Submitting request -> ", experiment, " - ", String.valueOf(var), " of ", String.valueOf(variation)) );
+				HttpHeaders headers = Util.getDefaultHeaders();
+				headers.add("ExperimentID", Util.msg(experiment, ".", String.valueOf(variation)));
+				headers.add("ExperimentVar", String.valueOf(var));
+				try {
+					Util.sendRequest(URL, headers, HttpMethod.POST, request, Void.class);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				this.getLogger().info("Request submitted!");					
+				Thread.sleep(latency);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -294,10 +307,10 @@ public class Experiment0 extends AbstractService  {
 		return (r<min) ? min : r;
 	}
 
-	private void generateFileResults(final String path, final String[] EdgeNodes, final int idxHost) {
-		this.getLogger().info("Waiting 5s to start a new experiment execution...");
+	private void generateFileResults(final String path, final String[] EdgeNodes, final int idxHost, int waitToGenerate) {
+		this.getLogger().info("Waiting "+waitToGenerate+"(s) to start a new experiment execution...");
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(waitToGenerate*1000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
