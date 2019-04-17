@@ -20,8 +20,8 @@ import br.edu.ufrj.lwcoedge.core.util.Util;
 public class ExperimentService extends AbstractService {
 
 	// This constant defines the amount of metrics collected
-	@Native private static int KEY_ELEMENTS = 200;
-	@Native private static int SUMMARY_ELEMENTS  = 100;
+	@Native private static int KEY_ELEMENTS = 2000;
+	@Native private static int SUMMARY_ELEMENTS  = 1000;
 	@Native private static int MAX_ELEMENTS  = 15000;
 	@Native private static int TIMETOLIVE    = 3600 * 48;
 	@Native private static int TIMEINTERVAL  = 3600 * 48;
