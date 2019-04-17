@@ -1,3 +1,4 @@
 br\edu\ufrj\lwcoedge\vn\controller\VirtualNodeSensingController.class
+br\edu\ufrj\lwcoedge\vn\sensing\IVNSensingService.class
 br\edu\ufrj\lwcoedge\vn\LwcoedgeVnSensingApplication.class
 br\edu\ufrj\lwcoedge\vn\sensing\VirtualNodeSensing.class

@@ -296,6 +296,12 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 			metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"TIME_SPENT_P2P", request.getDatatype().getId(), timeSpentWithP2P);
 		}
 
+		if (commlatency>0) {
+			metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"COMM_LATENCY", request.getDatatype().getId(), commlatency);
+		}
+
+		metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"TOT_RESPONSE_TIME", request.getDatatype().getId(), totalResponseTime);
+
 	}
 	
 	private void callBackResult(Request request, String requestId) {
