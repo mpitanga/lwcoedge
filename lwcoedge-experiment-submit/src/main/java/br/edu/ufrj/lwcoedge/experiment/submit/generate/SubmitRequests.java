@@ -8,6 +8,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.icmp4j.IcmpPingRequest;
+import org.icmp4j.IcmpPingResponse;
+import org.icmp4j.IcmpPingUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -57,20 +60,39 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 		String path = basePath+experimentName+"/";
 		String[] edgeNodes = config.getEdgenodes();
 
-		String urlCallBack = "http://192.168.237.127:8081/myapp/callback/result";
+		String urlCallBack = config.getCallback();// "http://192.168.237.127:8081/myapp/callback/result";
 		
 		boolean executeExperiment = config.isExecuteexperiment();
 		boolean clearMetrics = config.isClearmetrics();
 		boolean generateResults = config.isGenerateresults();
-
+		
+		int waitTogenerate = (config.getWaittogenerate() == null || config.getWaittogenerate() == 0) ? 5*60 : config.getWaittogenerate();
+				
 		clearCacheMetrics(edgeNodes, "E0", -1);
 
-		runExperiment(experimentName, path, edgeNodes, executeExperiment, clearMetrics, generateResults, urlCallBack);
+		runExperiment(experimentName, path, edgeNodes, executeExperiment, clearMetrics, generateResults, urlCallBack, waitTogenerate);
 
 	}
 
+	final IcmpPingRequest pingRequest = IcmpPingUtil.createIcmpPingRequest();
+	private long ping(String host, int times, int packetSize) {
+		this.pingRequest.setHost (host);
+		this.pingRequest.setPacketSize(packetSize);
+
+		int time = 0;
+		// repeat a few times
+		for (int count = 0; count < times; count ++) {
+			// delegate
+			final IcmpPingResponse response = IcmpPingUtil.executePingRequest(this.pingRequest);
+			time += response.getRtt();
+		}
+		Double latency = (double)time/times;
+		return latency.longValue() ;
+	}
+
 	private void runExperiment(String experimentName, String path, String[] edgeNodes, 
-			boolean executeExperiment, boolean clearMetrics, boolean generateResults, String urlCallBack) {
+			boolean executeExperiment, boolean clearMetrics, boolean generateResults, String urlCallBack,
+			int waitTogenerate) {
 
 		if (!executeExperiment) {
 			this.getLogger().info("The execution of the Experiment is disabled!");
@@ -83,7 +105,10 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 		int oldIdxhost = -1;
 		
 		LocalDateTime startEx = LocalDateTime.now();
-		int timeSleep = 100;
+		long timeSleep = ping(edgeNodes[0], 4, 32);
+		if (timeSleep > 50)
+			timeSleep = 0;
+		
 		//int firstRequests = 0;
 		try {
 			List<Requests> requests = service.getRequests(experimentName);
@@ -95,7 +120,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 						
 						if (oldExperimentCode  != null) {
 							if (generateResults) {
-								generateFileResults(path, edgeNodes, -1 /*oldIdxhost*/);
+								generateFileResults(path, edgeNodes, -1 /*oldIdxhost*/, waitTogenerate);
 							}
 						}
 						//clearCacheMetrics(edgeNodes, request.getExperimentcode(), request.getIdxhost());
@@ -133,7 +158,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 			}
 			if (oldExperimentCode  != null) {
 				if (generateResults) {
-					generateFileResults(path, edgeNodes, -1 /*oldIdxhost*/);
+					generateFileResults(path, edgeNodes, -1 /*oldIdxhost*/, waitTogenerate);
 				}
 			}
 		} catch (Exception e) {
@@ -161,7 +186,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 			HttpHeaders headers = Util.getDefaultHeaders();
 			headers.add("ExperimentID", Util.msg(request.getExperimentcode(), ".", String.valueOf(request.getVariation())));
 			headers.add("ExperimentVar", String.valueOf(request.getExperimentvar()));
-			final String URL = (request.getUrl()==null) ? urlCallBack : request.getUrl(); 
+			final String URL = request.getUrl();
 			try {
 				Util.sendRequest(URL, headers, HttpMethod.POST, request.getRequest(), Void.class);
 			} catch (Exception e) {
@@ -174,10 +199,10 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 		}
 	}
 
-	private void generateFileResults(final String path, final String[] EdgeNodes, final int idxHost) {
+	private void generateFileResults(final String path, final String[] EdgeNodes, final int idxHost, final int waitTogenerate) {
 		try {
-			this.getLogger().info("Waiting 5s to start a new experiment execution...");
-			Thread.sleep(5000);
+			this.getLogger().info("Waiting "+waitTogenerate+"(s) to start a new experiment execution...");
+			Thread.sleep(waitTogenerate*1000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
