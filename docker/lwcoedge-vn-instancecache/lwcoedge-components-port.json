@@ -1,0 +1,14 @@
+{
+"lwcoedge_vn_sensing"           : 11001, 
+"lwcoedge_vn_actuation"         : 21001,
+"lwcoedge_vn_datahandling"      : 31001,
+"lwcoedge_catalog_manager"      : 10000,
+"lwcoedge_vn_instancecache"     : 10001,
+"lwcoedge_edgenode_manager"     : 10002,
+"lwcoedge_resourceprovisioner"  : 10003,
+"lwcoedge_resourceallocator"    : 10004,
+"lwcoedge_monitor"              : 10005,
+"lwcoedge_p2pcollaboration"     : 10006,
+"lwcoedge_p2pdatasharing"       : 10007,
+"lwcoedge_manager_api"          : 10500
+}
