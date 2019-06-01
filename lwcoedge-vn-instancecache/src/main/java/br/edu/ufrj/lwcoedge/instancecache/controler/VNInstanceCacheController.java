@@ -33,12 +33,13 @@ public class VNInstanceCacheController implements ApplicationRunner {
 
 	@PostMapping("/search")
 	public VirtualNode getData(@RequestBody Datatype key, HttpServletRequest httpRequest) {
-		final String RequestID = httpRequest.getHeader("RequestID");
+/*		final String RequestID = httpRequest.getHeader("RequestID");
 		final String startDateTime = httpRequest.getHeader("StartDateTime");
 		final String experimentID = httpRequest.getHeader("ExperimentID");
 		final String requestSize = String.valueOf(httpRequest.getContentLengthLong());
-
 		return this.service.getSearch(key, RequestID, startDateTime, experimentID, requestSize);
+*/
+		return this.service.getSearch(key);
 	}
 
 	@GetMapping("/cache/list/instances")

@@ -17,7 +17,6 @@ import org.springframework.web.client.HttpServerErrorException;
 
 import br.edu.ufrj.lwcoedge.core.model.DataToShare;
 import br.edu.ufrj.lwcoedge.core.model.Request;
-import br.edu.ufrj.lwcoedge.core.util.Util;
 import br.edu.ufrj.lwcoedge.vn.sensing.IVNSensingService;
 
 @RestController
@@ -40,8 +39,8 @@ public class VirtualNodeSensingController implements ApplicationRunner {
 
 			vnService.handleRequest(request, RequestID, startDateTime, experimentID, commLatency, requestSize, timeSpentWithP2P);
 		} catch (Exception e) {
-			String msg = Util.msg("[VirtualNode] Error processing the request!\n", e.getMessage());
-			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, msg);
+			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
+					"[VirtualNode] Error processing the request!\n"+e.getMessage());
 		} 
 	}
 

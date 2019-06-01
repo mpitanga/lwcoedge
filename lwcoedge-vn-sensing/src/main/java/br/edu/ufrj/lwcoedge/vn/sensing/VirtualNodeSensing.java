@@ -50,6 +50,7 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 	public void appConfig(ApplicationArguments args) throws Exception {
 		// Initializing the Virtual Node object when the service (or container) is started.
 		if (args == null || args.getOptionNames().isEmpty()) {
+			this.getLogger().error("No parameters setting!");
 			return;
 		}
 		ComponentsPort ports = new ComponentsPort();
@@ -65,12 +66,16 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 		}
 		ports.setLwcoedge_manager_api(lwcoedge_manager_api);
 
-		VirtualNode virtualNode = Util.json2obj(jsonVN, VirtualNode.class);
-		virtualNode.setPort(port);
-		
-		this.setVn(virtualNode);
-		this.setPorts(ports);
-		this.start();
+		try {
+			VirtualNode virtualNode = Util.json2obj(jsonVN, VirtualNode.class);
+			virtualNode.setPort(port);
+			
+			this.setVn(virtualNode);
+			this.setPorts(ports);
+			this.start();			
+		} catch (Exception e) {
+			throw new Exception ("[VirtualNode] ERROR creating VN. "+e.getMessage());
+		}
 	}
 
 	@Override
@@ -86,20 +91,22 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 	@Override
 	public void start() {
 		this.getLogger().info("-------------");
-		this.getLogger().info(Util.msg("Initializing ",this.getName()," [",this.getVn().getId(),"] [Port=",this.getVn().getPort().toString(),"]..."));
+		this.getLogger().info("Initializing {} [{}] [Port={}]...",this.getName(),this.getVn().getId(),this.getVn().getPort().toString());
+
+//		this.getLogger().info(Util.msg("Initializing ",this.getName()," [",this.getVn().getId(),"] [Port=",this.getVn().getPort().toString(),"]..."));
 
 		this.getLogger().info("Establishing communication with the end devices...");
 		for (Element element : this.getVn().getDatatype().getElement()) {
 			EndDevice endDevice = new EndDevice(element.getValue());
 			endDevices.add(endDevice);
-			this.getLogger().info( Util.msg("End device ->", element.getValue()));
+			this.getLogger().info("End device ->{}", element.getValue());
 			ArrayList<Data> freshData = new ArrayList<Data>();
 			freshData.add(endDevice.getDataDB());
 			
 			this.getVn().getData().put(element.getValue(), freshData);
 		}
 		this.setInit(true);
-		this.getLogger().info(Util.msg(this.getName(), " is started."));
+		this.getLogger().info("{} is started.", this.getName());
 
 		this.getLogger().info("-------------");
 	}
@@ -111,13 +118,10 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 	
 	@Override
 	public void stop() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(this.getName()).append(" [").append(this.getVn().getId()).append("] is stopping...");
-		
 		this.getLogger().info("-------------");
-		this.getLogger().info(sb.toString());
+		this.getLogger().info("{} [{}] is stopping...", this.getName(), this.getVn().getId());
 		this.setInit(false);
-		this.getLogger().info(Util.msg(getName()," stopped."));
+		this.getLogger().info("{} stopped.", getName());
 		this.getLogger().info("-------------");
 	}
 
@@ -147,19 +151,16 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 		// if the Proof-of-Concept sends the request, then allow the metric registration.
 		final boolean sendMetric = !args[2].equals("R");
 		
-		this.getLogger().info( "--------------------------------------------------------");
-		this.getLogger().info( Util.msg(
-				"Virtual Node received a request [", headers.get("RequestID"), 
-				"]! Request time: ",headers.get("StartDateTime"),
-				" TimeSpentWithP2P: ", headers.get("TimeSpentWithP2P")
-				)
-		);
+		this.getLogger().debug( "--------------------------------------------------------");
+		this.getLogger().debug(
+				"Virtual Node received a request [{}]! Request time: {}  TimeSpentWithP2P: {} ",headers.get("RequestID"), headers.get("StartDateTime"), headers.get("TimeSpentWithP2P"));
+		
 		ldtRequest  = LocalDateTime.parse(args[1]);
 
 		boolean sendfreshData = false;
 
 		if (this.getVn() == null) {
-			this.getLogger().info( "The Virtual Node is not instantiate!");
+			this.getLogger().error("The Virtual Node is not instantiate!");
 			throw new Exception("The Virtual Node is not instantiate!");
 		}
 		
@@ -180,11 +181,11 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 						//endDevice.setInterval(freshness.toMillis());
 					//}
 					
-					this.getLogger().info( Util.msg("Checking the freshness from the data of the element [",endDevice.getHostName(), "]"));
+					this.getLogger().debug("Checking the freshness from the data of the element [{}]",endDevice.getHostName());
 					if (request.getParam().getFr() < freshness.toMillis()) {
 
 						String msg = "Fresh data obtained from database!";
-						this.getLogger().info( "Getting freshdata..." );
+						this.getLogger().debug( "Getting freshdata..." );
 
 						// get new data from internal DB
 						String metric = "R_TEMP_DB";
@@ -209,7 +210,7 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 						}
 					} else { // requests served from the data cache (M10)
 						
-						this.getLogger().info("Fresh data obtained from cache!");
+						this.getLogger().debug("Fresh data obtained from cache!");
 						if (sendMetric) {
 							metricService.sendMetric(managerApiUrl, headers.get("ExperimentID"), "R_MEM_CACHE", request.getDatatype().getId());
 						}
@@ -217,7 +218,7 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 				}
 			}
         } else {
-			this.getLogger().info("Getting fresh data from temporary Database because no freshness property has been configured....");
+			this.getLogger().debug("Getting fresh data from temporary Database because no freshness property has been configured....");
         	// to get fresh data
         	sendfreshData = true;
         	//dataToSend = this.getVn().getData();
@@ -238,7 +239,7 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 		// Callback
 		// Sending data to request issuer.
 		asyncService.run(()-> {
-			this.callBackResult(request, headers.get("RequestID"));
+			this.callBackResult(request, headers);
 		});
 
 		if (sendMetric) {
@@ -251,12 +252,12 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 				shareData(headers);
 			});
 		}
-		this.getLogger().info( "Virtual Node process request finished!");
-		this.getLogger().info( "--------------------------------------------------------");
+		this.getLogger().debug( "Virtual Node process request finished!");
+		this.getLogger().debug( "--------------------------------------------------------");
 	}
 
 	private void sendAllMetrics(Request request, LinkedHashMap<String, String> headers) {
-		this.getLogger().info( Util.msg("Registering metrics of the request [",headers.get("RequestID"),"]..." ));
+		this.getLogger().debug("Registering metrics of the request [{}]...",headers.get("RequestID"));
 		final LocalDateTime start = LocalDateTime.parse(headers.get("StartDateTime"));
 		long commlatency = 0;
 		try {
@@ -280,20 +281,27 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 		long responseTime = Duration.between(start, finish).toMillis();
 		long totalResponseTime = responseTime+timeSpentWithP2P+commlatency;
 
-		this.getLogger().info( Util.msg("Virtual Node process request [", headers.get("RequestID"), "] finished! "));
-		this.getLogger().info( Util.msg("(a) Computational time (ms)->", String.valueOf(responseTime)));
-		this.getLogger().info( Util.msg("(b) Latency measured = ", String.valueOf(commlatency)));
-		this.getLogger().info( Util.msg("(c) Time of P2P = ", String.valueOf(timeSpentWithP2P)));
-		this.getLogger().info( Util.msg("Total response time (a+b+c)= ", String.valueOf(totalResponseTime)));
+		this.getLogger().debug( "Virtual Node process request [{}] finished!", headers.get("RequestID"));
+		this.getLogger().debug( "(a) Computational time (ms)->{}", String.valueOf(responseTime));
+		this.getLogger().debug( "(b) Latency measured = {}", String.valueOf(commlatency));
+		this.getLogger().debug( "(c) Time of P2P = {}", String.valueOf(timeSpentWithP2P));
+		this.getLogger().debug( "Total response time (a+b+c)= {}", String.valueOf(totalResponseTime));
 
 		//checking if the request parameter RTT was fulfilled
 		//the unmet RTTs are measured via M11 metric.
 		if (request.getParam().getRtt() != null && totalResponseTime > request.getParam().getRtt()) {
 			metricService.sendMetric(managerApiUrl, headers.get("ExperimentID"),"REQ_RTTH_INV", request.getDatatype().getId());
+			metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"REQ_RTTH_INV_TIME", request.getDatatype().getId(), totalResponseTime);
+			metricService.sendMetricAnalytic(managerApiUrl, headers.get("ExperimentID"),"REQ_RTTH_INV_TIME_ANL", headers.get("RequestID"), totalResponseTime);
+			if (commlatency>0) {
+				metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"REQ_RTTH_INV_TIME_P2P", request.getDatatype().getId(), totalResponseTime);
+			}
 		}
 		
 		if (timeSpentWithP2P>0) {
 			metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"TIME_SPENT_P2P", request.getDatatype().getId(), timeSpentWithP2P);
+			metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"TTS_OF_P2P", request.getDatatype().getId(), totalResponseTime);			
+			metricService.sendMetricAnalytic(managerApiUrl, headers.get("ExperimentID"),"TTS_OF_P2P_ANL", headers.get("RequestID"), totalResponseTime);
 		}
 
 		if (commlatency>0) {
@@ -301,24 +309,39 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 		}
 
 		metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"TOT_RESPONSE_TIME", request.getDatatype().getId(), totalResponseTime);
+		metricService.sendMetricAnalytic(managerApiUrl, headers.get("ExperimentID"),"TOT_RESPONSE_TIME_ANL", headers.get("RequestID"), totalResponseTime);
 
 	}
 	
-	private void callBackResult(Request request, String requestId) {
+	private void callBackResult(Request request, LinkedHashMap<String, String> headers) {
 		StopWatch callBackTime = new StopWatch();
 		callBackTime.start();
 
-		this.getLogger().info( Util.msg("Sending data to the request issuer [", requestId,"]...."));
+		this.getLogger().debug("Sending data to the request issuer [{}]...", headers.get("RequestID"));
 		try {
 			String jsonData = Util.obj2json(this.getVn().getData());
-			Util.callBack(request.getCallback(), jsonData);			
-			this.getLogger().info( Util.msg("Data sent to the request issuer."));
+			Util.callBack(request.getCallback(), jsonData);
+			this.getLogger().debug("Data sent to the request issuer.");
+			
+			long timeSpentWithP2P = 0;
+			try {
+				timeSpentWithP2P = Long.parseLong(headers.get("TimeSpentWithP2P"));
+			} catch (Exception e2) {
+				timeSpentWithP2P = 0;
+			}
+			if (timeSpentWithP2P>0) {
+				metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"DT_CALLBACK_P2P", request.getDatatype().getId(), (long)jsonData.length());
+				metricService.sendMetricAnalytic(managerApiUrl, headers.get("ExperimentID"),"DT_CALLBACK_P2P_ANL", headers.get("RequestID"), (long)jsonData.length());
+			}
+			metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"),"DT_CALLBACK", request.getDatatype().getId(), (long)jsonData.length());
+			metricService.sendMetricAnalytic(managerApiUrl, headers.get("ExperimentID"),"DT_CALLBACK_ANL", headers.get("RequestID"), (long)jsonData.length());
+
 		} catch (Exception e) {
-			this.getLogger().info( Util.msg("[ERROR] ", "callback URL cannot be executed!\n", e.getMessage()));
+			this.getLogger().error("[ERROR] callback URL cannot be executed!\n{}", e.getMessage());
 		}
 
 		callBackTime.stop();
-		this.getLogger().info( Util.msg("CallBack response time due to latency ->", Long.toString(callBackTime.getTotalTimeMillis())));
+		this.getLogger().debug("CallBack response time due to latency ->{}", Long.toString(callBackTime.getTotalTimeMillis()));
 
 	}
 
@@ -327,22 +350,22 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 	public void neighborRegister(ArrayList<String> neighbors) {
 		this.getLogger().info("[NEIGHBOR REGISTER] Updating the neighborhood list...");
 		this.getVn().setNeighbors(neighbors);
-		this.getLogger().info( Util.msg("[NEIGHBOR REGISTER] ", this.getVn().getNeighbors().toString()) );
+		this.getLogger().info("[NEIGHBOR REGISTER] {}", this.getVn().getNeighbors().toString() );
 		this.getLogger().info("[NEIGHBOR REGISTER] End Update.");
 	}
 
 	@Override
 	@Async("ProcessExecutor-VnSensing")
 	public void setData(String element, ArrayList<Data> data, String... args) {
-		this.getLogger().info( Util.msg("[SETDATA] Request ID [", args[0], "]..."));		
-		this.getLogger().info( Util.msg("[SETDATA] Updating data for the element [", element, "]..."));
+		this.getLogger().info( "[SETDATA] Request ID [{}]...", args[0]);
+		this.getLogger().info( "[SETDATA] Updating data for the element [{}]...", element);
 		ArrayList<Data> currentData = this.getVn().getData(element);
 		if (currentData != null && currentData.containsAll(data)) {
 			this.getLogger().info("[SETDATA] No data update necessary!");
 			return;
 		}
 		this.getVn().setData(element, data);
-		this.getLogger().info( Util.msg("[SETDATA] ", this.getVn().getData(element).toString()) );
+		this.getLogger().info("[SETDATA] {}", this.getVn().getData(element).toString());
 		this.getLogger().info("[SETDATA] End Update.");
 
 //		shareData(args);
@@ -377,12 +400,12 @@ public class VirtualNodeSensing extends AbstractVirtualNode implements IVNSensin
 			dataSharing.setVirtualNode(virtualNode);
 			dataSharing.setDs(ds);
 
-			this.getLogger().info(Util.msg("[SHARE DATA] Sending the request to the P2P data sharing..."));
-			this.getLogger().info(Util.msg("[SHARE DATA] ", dataSharing.toString()));
+			this.getLogger().info("[SHARE DATA] Sending the request to the P2P data sharing...");
+			this.getLogger().info("[SHARE DATA] {}", dataSharing.toString());
 			try {
 				Util.sendRequest(this.p2pdatasharingURL, Util.getDefaultHeaders(headers), HttpMethod.POST, dataSharing, Void.class);
 			} catch (Exception e) {
-				this.getLogger().info(Util.msg("[ERROR] ", e.getMessage()));
+				this.getLogger().error("[ERROR] {}", e.getMessage());
 			}			
 		}
 		this.getLogger().info("[SHARE DATA] End invoking P2P data sharing.");
