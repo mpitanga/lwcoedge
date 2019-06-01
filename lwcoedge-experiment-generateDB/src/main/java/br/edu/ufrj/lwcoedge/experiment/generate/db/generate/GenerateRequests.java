@@ -3,8 +3,9 @@ package br.edu.ufrj.lwcoedge.experiment.generate.db.generate;
 import java.io.File;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.logging.Logger;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -23,7 +24,8 @@ import br.edu.ufrj.lwcoedge.experiment.generate.db.service.ServiceDB;
 @Component
 public class GenerateRequests implements ApplicationRunner {
 
-	private Logger logger = Logger.getLogger(this.getClass().getName());
+	private Logger logger = LogManager.getLogger(getClass());
+			//Logger.getLogger(this.getClass().getName());
 	
 	@Autowired
 	ServiceDB service;
@@ -69,9 +71,9 @@ public class GenerateRequests implements ApplicationRunner {
 			int idxHost = config.getIdxnode();
 			int cycles = config.getCycles();
 			int requestVariation = config.getRequestvariation();
+			int minfreshness = config.getMinfreshness();
 			int maxfreshness = config.getMaxfreshness();
 			int maxresponsetime = config.getMaxresponsetime();
-			boolean randomFreshness = config.isRandomfreshness();
 			String[] datatypeids = config.getDatatypeids();
 			int idxdatatype = config.getIdxdatatype();
 			Collaboration collabActivated = config.getCollaboration();
@@ -82,7 +84,7 @@ public class GenerateRequests implements ApplicationRunner {
 			}
 
 			generateExperimentRequests(experimentName, EdgeNodes, EntryPointPort, callBackURL, 
-					idxHost, times, cycles, requestVariation, maxfreshness, maxresponsetime, randomFreshness,
+					idxHost, times, cycles, requestVariation, minfreshness, maxfreshness, maxresponsetime,
 					datatypeids, idxdatatype, collabActivated);
 			
 			logger.info("----------------------------------");
@@ -93,7 +95,7 @@ public class GenerateRequests implements ApplicationRunner {
 	}
 
 	private void generateExperimentRequests(String experimentName, String[] edgeNodes, String EntryPointPort, String callBackURL,
-			int idxHost, int times, int cycles, int requestVariation, int maxfreshness, int maxresponsetime, boolean randomFreshness,
+			int idxHost, int times, int cycles, int requestVariation, int minfreshness, int maxfreshness, int maxresponsetime,
 			String[] datatypeids, int idxdatatype, Collaboration collabActivated) throws Exception {
 
 		LocalDateTime startEx = LocalDateTime.now();
@@ -113,25 +115,25 @@ public class GenerateRequests implements ApplicationRunner {
 			
 			// alterar para o nome do experimento variar de acordo com X...E1,E2,E3...
 			createRequest(edgeNodes, EntryPointPort, callBackURL, experimentName, experimentCode, cycles, requestVariation, 
-					datatypeids, maxfreshness, maxresponsetime, randomFreshness, idxHost, idxdatatype,
+					datatypeids, minfreshness, maxfreshness, maxresponsetime, idxHost, idxdatatype,
 					totalOfRequests, collabActivated);
 
 		}
 		LocalDateTime finishEx = LocalDateTime.now();
 		Duration d = Duration.between(startEx, finishEx);
 		logger.info("----------------------------------");
-		logger.info("Experiment Name    -> "+experimentName);
-		logger.info("Start experiment   -> "+startEx);
-		logger.info("Finish experiment  -> "+finishEx);
-		logger.info("Time elapsed (sec) -> "+d.getSeconds());
-		logger.info("Time elapsed (ms)  -> "+d.toMillis());
+		logger.info("Experiment Name    -> {}",experimentName);
+		logger.info("Start experiment   -> {}",startEx);
+		logger.info("Finish experiment  -> {}",finishEx);
+		logger.info("Time elapsed (sec) -> {}",d.getSeconds());
+		logger.info("Time elapsed (ms)  -> {}",d.toMillis());
 		logger.info("----------------------------------");
 
 	}
 
 	private void createRequest(String[] edgeNodes, String entryPointPort, String callBackURL, 
 			String experimentName, String experimentCode, int cycles, int requestVariation, String[] datatypeids, 
-			int maxfreshness, int maxresponsetime, boolean randomFreshness, int idxHost, int idxdatatype, 
+			int minfreshness, int maxfreshness, int maxresponsetime, int idxHost, int idxdatatype, 
 			int[] totalOfRequests, Collaboration collabActivated) {
 
 		LocalDateTime startEx = LocalDateTime.now();
@@ -144,7 +146,7 @@ public class GenerateRequests implements ApplicationRunner {
 						: 0;
 
 				doCreateRequest(edgeNodes, entryPointPort, experimentName, experimentCode, datatypeids, 
-								maxfreshness, maxresponsetime, callBackURL, variation, randomFreshness, 
+								minfreshness, maxfreshness, maxresponsetime, callBackURL, variation, 
 								idxHost, idxdatatype, activeRequests, collabActivated);
 
 			} catch (Exception e) {
@@ -163,8 +165,8 @@ public class GenerateRequests implements ApplicationRunner {
 	}
 
 	private void doCreateRequest(String[] edgeNodes, String EntryPointPort, String experimentname, String experimentcode,
-			String[] datatypeIds, int maxFreshness, int maxResponsetime, String callback, int variation, 
-			boolean randomFreshness, int idxhost, int idxdatatype, int activeRequests, Collaboration collabActivated) {
+			String[] datatypeIds, int minFreshness, int maxFreshness, int maxResponsetime, String callback, int variation, 
+			int idxhost, int idxdatatype, int activeRequests, Collaboration collabActivated) {
 
 		logger.info("-----------------------------------");
 		logger.info( Util.msg("Generation Request-> Experiment: ",experimentname,", Variation: ", String.valueOf(variation)) );
@@ -193,7 +195,7 @@ public class GenerateRequests implements ApplicationRunner {
 					int idxDT = (idxdatatype == -1)
 							? generateNumber(0, datatypeIds.length)
 							: idxdatatype;
-					int freshness = (randomFreshness) ? generateNumber(1000, maxFreshness) : maxFreshness;
+					int freshness = (maxFreshness > minFreshness) ? generateNumber(minFreshness, maxFreshness) : maxFreshness;
 					String experimentid = Util.msg(experimentcode, ".", String.valueOf(variation));
 					int experimentvar = var;
 					try {

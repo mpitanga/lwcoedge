@@ -1,0 +1,5 @@
+br\edu\ufrj\lwcoedge\experiment\generate\db\service\ServiceDB.class
+br\edu\ufrj\lwcoedge\experiment\generate\LwcoedgeExperimentGenerateDbApplication.class
+br\edu\ufrj\lwcoedge\experiment\generate\db\dao\RequestDAO.class
+br\edu\ufrj\lwcoedge\experiment\generate\db\generate\GenerateRequests.class
+br\edu\ufrj\lwcoedge\experiment\generate\db\entities\Requests.class
