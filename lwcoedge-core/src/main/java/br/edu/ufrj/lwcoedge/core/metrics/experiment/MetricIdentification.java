@@ -1,7 +1,5 @@
 package br.edu.ufrj.lwcoedge.core.metrics.experiment;
 
-import br.edu.ufrj.lwcoedge.core.util.Util;
-
 public class MetricIdentification {
 
 	private String experiment;
@@ -36,14 +34,14 @@ public class MetricIdentification {
 	 * @return experiment key
 	 */
 	public String getKey() {
-		return Util.msg(this.experiment, "-", this.metric);
+		return this.experiment+"-"+this.metric;
 	}
 
 	/**
 	 * @return experiment extended key
 	 */
 	public String getSummaryKey() {
-		return Util.msg(this.getKey(), "-", this.datatypeID);
+		return this.getKey()+"-"+this.datatypeID;
 	}
 
 	/**
@@ -105,8 +103,8 @@ public class MetricIdentification {
 	@Override
 	public String toString() {
 		if (this.variation == null)
-			return Util.msg(this.experiment, "-", this.metric, "-", "0", "-", this.datatypeID);
+			return this.experiment+"-"+this.metric+"-"+"0"+"-"+this.datatypeID;
 		else
-			return Util.msg(this.experiment, "-", this.metric, "-", this.variation, "-", this.datatypeID);
+			return this.experiment+"-"+this.metric+"-"+this.variation+"-"+this.datatypeID;
 	}
 }

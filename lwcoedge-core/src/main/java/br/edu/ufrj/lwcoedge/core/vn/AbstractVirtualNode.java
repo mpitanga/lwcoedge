@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
 import br.edu.ufrj.lwcoedge.core.service.AbstractService;
-import br.edu.ufrj.lwcoedge.core.util.Util;
 
 public abstract class AbstractVirtualNode extends AbstractService implements Serializable {
 
@@ -64,7 +63,7 @@ public abstract class AbstractVirtualNode extends AbstractService implements Ser
 	}
 
 	public String getUrl() {
-		return Util.msg(this.vn.getHostName(), ":", this.vn.getPort().toString());
+		return this.vn.getHostName() + ":" + this.vn.getPort().toString();
 	}
 
 }

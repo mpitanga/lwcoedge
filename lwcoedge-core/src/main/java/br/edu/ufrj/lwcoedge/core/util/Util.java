@@ -2,6 +2,8 @@ package br.edu.ufrj.lwcoedge.core.util;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -100,8 +102,7 @@ public class Util {
 		if (resp.getStatusCode() != HttpStatus.OK) {
 			//throw new Exception ("Http Error! "+resp.getStatusCodeValue()+"\n"+resp.getStatusCode().getReasonPhrase());
 			throw new HttpServerErrorException(resp.getStatusCode(),
-					msg("Http Error! ", Integer.toString(resp.getStatusCodeValue()), 
-							"\n", resp.getStatusCode().getReasonPhrase())
+					"Http Error! "+Integer.toString(resp.getStatusCodeValue())+"\n"+resp.getStatusCode().getReasonPhrase()
 				);
 		}
 		return resp;
@@ -136,7 +137,7 @@ public class Util {
 		Runtime r = Runtime.getRuntime();
 		Process proc = null;
 		if (System.getProperty("os.name").toLowerCase().contains("win")) {
-			proc = r.exec( Util.msg("cmd /c start /min /wait ",command));
+			proc = r.exec( "cmd /c start /min /wait "+command );
 		} else {
 			proc = r.exec(Util.msg(command));
 			// any error message?
@@ -152,6 +153,14 @@ public class Util {
 		}
 		fos.flush();
         fos.close();
+	}
+	
+	private static final BigDecimal ONE_HUNDRED = BigDecimal.valueOf(100);
+	
+	public static double calcPercentage(long value1, long value2, int precision) {
+		BigDecimal result = BigDecimal.valueOf(value2).divide(BigDecimal.valueOf(value1), 4, RoundingMode.HALF_UP);
+		result = BigDecimal.ONE.subtract(result).multiply(ONE_HUNDRED).setScale(precision, RoundingMode.HALF_UP);
+		return result.doubleValue();
 	}
 
 	public static String obj2json(Object obj){

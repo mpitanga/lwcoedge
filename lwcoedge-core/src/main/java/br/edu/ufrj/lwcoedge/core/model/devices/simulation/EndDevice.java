@@ -4,7 +4,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import br.edu.ufrj.lwcoedge.core.model.Data;
 import br.edu.ufrj.lwcoedge.core.util.Util;
@@ -13,7 +15,8 @@ public class EndDevice extends AbstractDevice implements Serializable {
 
 	private static final long serialVersionUID = 8866494361321407243L;
 
-	private Logger logger = Logger.getLogger(this.getClass().getName());
+	private Logger logger = LogManager.getLogger(getClass());
+	//Logger.getLogger(this.getClass().getName());
 	
 	private EndDeviceType type;
 	private Data data;
@@ -50,11 +53,11 @@ public class EndDevice extends AbstractDevice implements Serializable {
 	// Direct access
 	public Data getData() {
 		try {
-			Thread.sleep(75);
+			Thread.sleep(38);
 			this.generateRandomData();
 			return this.data;
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage());
 			return this.data;
 		}
 	}
@@ -63,10 +66,11 @@ public class EndDevice extends AbstractDevice implements Serializable {
 		try {
 //			this.generateRandomData();
 			// The communication latency is based on the access to the FIWARE Orion Broker component.
-			Thread.sleep(97); 
+			// this number is an average measured after 200 access.
+			Thread.sleep(19); 
 			return data;
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			logger.error(e.getMessage());
 			return data;
 		}
 	}
@@ -112,7 +116,7 @@ public class EndDevice extends AbstractDevice implements Serializable {
 			public void run() {
 				while (!Thread.currentThread().isInterrupted()) {
 					generateRandomData();
-					logger.info("Sending data ["+data.toString()+" to the internal database...");
+					logger.debug("Sending data [{} to the internal database...",data.toString());
 					try {
 						Thread.sleep(interval);
 					} catch (InterruptedException e) {
