@@ -14,7 +14,6 @@ import org.springframework.web.client.HttpServerErrorException;
 
 import br.edu.ufrj.lwcoedge.core.interfaces.IRest;
 import br.edu.ufrj.lwcoedge.core.model.Request;
-import br.edu.ufrj.lwcoedge.core.util.Util;
 
 @RestController
 @RequestMapping("/lwcoedge")
@@ -34,9 +33,7 @@ public class ApplicationAPIController implements ApplicationRunner {
 					? "1" : httpRequest.getHeader("ExperimentVar");
 			service.sendRequest(request, expID, var);
 		} catch (Exception e) {
-			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
-					Util.msg("[ERROR] ", e.getMessage())
-				);
+			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "[ERROR] "+e.getMessage());
 		}
 	}
 

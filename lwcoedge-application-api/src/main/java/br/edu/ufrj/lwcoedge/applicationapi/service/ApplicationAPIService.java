@@ -38,14 +38,14 @@ public class ApplicationAPIService extends AbstractService implements IRest {
 				this.loadComponentsPort(args);
 				this.resourceAllocator = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_resourceallocator(), "/resourceallocator/handlerequest");
 				this.managerApiUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
-				this.getLogger().info( Util.msg("ResourceAllocator cache url = ", this.resourceAllocator));
-				this.getLogger().info( Util.msg("ManagerApi cache url = ", this.managerApiUrl));
+				this.getLogger().info("ResourceAllocator cache url = {}", this.resourceAllocator);
+				this.getLogger().info("ManagerApi cache url = {}", this.managerApiUrl);
 			} catch (Exception e) {
-				this.getLogger().info(e.getMessage());
+				this.getLogger().error(e.getMessage());
 				System.exit(0);
 			}
 		} else {
-			this.getLogger().info("No application settings founded!");
+			this.getLogger().error("No application settings founded!");
 			System.exit(0);
 		}
 		this.getLogger().info("");
@@ -63,8 +63,7 @@ public class ApplicationAPIService extends AbstractService implements IRest {
 			headers.put("RequestID", id.toString()); //RequestID
 			headers.put("StartDateTime", startTime); //StartDateTime
 			headers.put("ExperimentID", experimentId); //ExperimentID
-			String msg = Util.msg("Sending request [", id.toString(), "] to the Resource Allocator! Request time: ", startTime);
-			this.getLogger().info(Util.msg(msg));
+			this.getLogger().debug("Sending request [{}] to the Resource Allocator! Request time: {}",id.toString(), startTime);
 			Util.sendRequest(this.resourceAllocator, Util.getDefaultHeaders(headers), HttpMethod.POST, request, Void.class);
 
 		} catch (Exception e) {
@@ -74,17 +73,17 @@ public class ApplicationAPIService extends AbstractService implements IRest {
 				this.callBackResult(request);
 			});
 
-			new Exception(Util.msg("The call for the Resource Allocator failed!\n", e.getMessage()));
+			new Exception("The call for the Resource Allocator failed!\n"+e.getMessage());
 		}
 	}
 
 	private void callBackResult(Request request) {
-		this.getLogger().info( Util.msg("Sending Error message to the request issuer...."));
+		this.getLogger().debug("Sending message to the request issuer....");
 		try {
 			Util.callBack(request.getCallback(), new String("ERROR"));
-			this.getLogger().info( Util.msg("Data sent to the request issuer."));
+			this.getLogger().debug("Data sent to the request issuer.");
 		} catch (Exception e) {
-			this.getLogger().info( Util.msg("[ERROR] ","The call for the Application failed!\n", e.getMessage()) );
+			this.getLogger().error("[ERROR] The call for the Application failed!\n {}", e.getMessage());
 		}
 
 	}
