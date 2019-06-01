@@ -18,7 +18,6 @@ import br.edu.ufrj.lwcoedge.core.interfaces.IMonitor;
 import br.edu.ufrj.lwcoedge.core.model.Metrics;
 import br.edu.ufrj.lwcoedge.core.model.ResourcesAvailable;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
-import br.edu.ufrj.lwcoedge.core.util.Util;
 
 @RestController
 @RequestMapping("/monitor")
@@ -33,7 +32,7 @@ public class MonitorController implements ApplicationRunner {
 			return service.getVirtualNodeMetrics(vn);
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("Error fetching virtual node metrics. Cause: ", e.getMessage()));
+					"Error fetching virtual node metrics. Cause: "+e.getMessage());
 		}
 	}
 	
@@ -51,7 +50,7 @@ public class MonitorController implements ApplicationRunner {
 			return service.getNodeResources(RequestID, startDateTime, experimentID, requestSizeStr);
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
-					Util.msg("Error fetching node resources. Cause: ", e.getMessage()));
+					"Error fetching node resources. Cause: "+e.getMessage());
 		}
 	}
 
