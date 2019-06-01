@@ -17,7 +17,6 @@ import org.springframework.web.client.HttpServerErrorException;
 
 import br.edu.ufrj.lwcoedge.core.interfaces.IRequest;
 import br.edu.ufrj.lwcoedge.core.model.Request;
-import br.edu.ufrj.lwcoedge.core.util.Util;
 
 @RestController
 @RequestMapping("/resourceallocator")
@@ -54,7 +53,7 @@ public class ResourceAllocatorController implements ApplicationRunner {
 			}
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
-					Util.msg("The request was not processed. Cause: ", e.getMessage())
+					"The request was not processed. Cause: "+e.getMessage()
 				);
 		}
 	}

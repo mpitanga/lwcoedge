@@ -12,12 +12,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.server.ResponseStatusException;
 
 import br.edu.ufrj.lwcoedge.core.interfaces.IP2Prov;
 import br.edu.ufrj.lwcoedge.core.model.Request;
 import br.edu.ufrj.lwcoedge.core.model.VirtualNode;
-import br.edu.ufrj.lwcoedge.core.util.Util;
 
 @RestController
 @RequestMapping("/p2pcollaboration")
@@ -50,10 +49,9 @@ public class P2PCollaborationController implements ApplicationRunner{
 
 			service.sendToNeighborNode(request, RequestID, startDateTime, experimentID, 
 						startComm, requestSize, timeSpentWithP2P);
-			
 		} catch (Exception e) {
-			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("The request has been not forwarded to the neighboring edge node. Cause: ",e.getMessage()));
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+					"The request has been not forwarded to the neighboring edge node. Cause: "+e.getMessage());
 		}
 	}
 
@@ -66,10 +64,8 @@ public class P2PCollaborationController implements ApplicationRunner{
 			final String requestSize = String.valueOf(httpRequest.getContentLengthLong());
 			service.registerVNtoDataSharing(newVirtualNode, requestID, startDateTime, experimentID, requestSize);
 		} catch (Exception e) {
-			throw 
-			new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-				Util.msg("The new virtual node [",newVirtualNode.getId(),"] has been not registered to data sharing. ","Cause: ",e.getMessage())
-			);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+					"The new virtual node ["+newVirtualNode.getId()+"] has been not registered to data sharing. Cause: "+e.getMessage());
 		}
 	}
 
@@ -79,13 +75,13 @@ public class P2PCollaborationController implements ApplicationRunner{
 	}
 
 	@GetMapping("/config/reload")
-	public void reload() {
+	public void reload() throws Exception {
 		try {
 			service.edgeNodeConfig();
 			service.neededResources();
 		} catch (Exception e) {
-			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("The request has been not forwarded to the neighboring edge node. Cause: ",e.getMessage()));
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+					"The request has been not forwarded to the neighboring edge node. Cause: "+e.getMessage());
 		}
 	}
 	

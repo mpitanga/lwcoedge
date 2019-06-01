@@ -41,11 +41,11 @@ public class P2PDataSharingService extends AbstractService implements IShare {
 				this.loadComponentsPort(args);
 				this.managerApiUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
 			} catch (Exception e) {
-				this.getLogger().info(e.getMessage());
+				this.getLogger().error(e.getMessage());
 				System.exit(-1);
 			}
 		} else {
-			this.getLogger().info("No application settings founded!");
+			this.getLogger().error("No application settings founded!");
 			System.exit(-1);
 		}
 		this.getLogger().info("");
@@ -61,7 +61,7 @@ public class P2PDataSharingService extends AbstractService implements IShare {
 		String url = this.getUrl("http://", host, this.getPorts().getLwcoedge_vn_instancecache(), "/vninstancecache/search");
 		
 		ResponseEntity<VirtualNode> httpRespVN = 
-				Util.sendRequest(url, Util.getDefaultHeaders(), HttpMethod.POST, datatype, VirtualNode.class);
+				Util.sendRequest(url, Util.getDefaultHeaders(), HttpMethod.POST, datatype, VirtualNode.class, 500);
 
 		if (httpRespVN.hasBody()) {
 			return httpRespVN.getBody();
@@ -85,7 +85,7 @@ public class P2PDataSharingService extends AbstractService implements IShare {
 
 		List<String> neighbors = virtualNode.getNeighbors();
 		String url, app;
-		this.getLogger().info( Util.msg("Starting the data sharing from the Virtual Node [",virtualNode.getId(), "]") );
+		this.getLogger().debug("Starting the data sharing from the Virtual Node [{}]",virtualNode.getId());
 		for (String neighborVNID : neighbors) {
 			// avoiding cross-reference between virtual nodes
 			if (neighborVNID.equals(virtualNode.getId()))
@@ -100,24 +100,23 @@ public class P2PDataSharingService extends AbstractService implements IShare {
 				if (!exists)
 					continue;
 
-				this.getLogger().info(Util.msg("Sending fresh data to the neighbor Virtual Node [",neighborVN.getId(), "] ..."));
+				this.getLogger().debug("Sending fresh data to the neighbor Virtual Node [{}]...",neighborVN.getId());
 				DataToShare dataToshare = new DataToShare(element, data);
 				app = (neighborVN.getDatatype().getType() == Type.SIMPLE) ? "/vnsensing/set/data" : "/vnactuation/set/data";
 				url = this.getUrl("http://", neighborVN.getHostName(), neighborVN.getPort(), app);
 				
-				Util.sendRequest(url, Util.getDefaultHeaders(headers), HttpMethod.POST, dataToshare, Void.class);
-				this.getLogger().info("Fresh data sent to the neighbor Virtual Node with success!");
+				Util.sendRequest(url, Util.getDefaultHeaders(headers), HttpMethod.POST, dataToshare, Void.class, 250);
+				this.getLogger().debug("Fresh data sent to the neighbor Virtual Node with success!");
 
 				//M12 -> data interchange using data sharing
 				Long valueOf = Long.valueOf(args[3]);
 				metricService.sendMetricSummaryValue(managerApiUrl, headers.get("ExperimentID"), "AVG_DTSHARING", neighborVN.getDatatype().getDescriptorId(), valueOf);
 
 			} catch (Exception e) {
-				String msg = Util.msg("[ERROR shareData] ","Sending the fresh data to the Virtual Node failed!\n",e.getMessage());
-				this.getLogger().info(msg);
+				this.getLogger().error("[ERROR shareData] Sending the fresh data to the Virtual Node failed!\n{}",e.getMessage());
 			}
 		}
-		this.getLogger().info("Data sharing finished!");
+		this.getLogger().debug("Data sharing finished!");
 	}
 
 	@Override

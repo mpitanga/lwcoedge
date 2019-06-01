@@ -41,16 +41,16 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 				this.monitorUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_monitor(), "/monitor/vn/metrics");
 				this.managerApiUrl = this.getUrl("http://", this.getHostName(), this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/put");
 
-				this.getLogger().info( Util.msg("VNInstance cache url = ", this.vnInstanceCacheUrl) );
-				this.getLogger().info( Util.msg("Resource provisioner url = ",this.resourceProvisionerUrl) );
-				this.getLogger().info( Util.msg("Monitor url = ", this.monitorUrl) );
+				this.getLogger().info("VNInstance cache url = {}", this.vnInstanceCacheUrl);
+				this.getLogger().info("Resource provisioner url = {}",this.resourceProvisionerUrl);
+				this.getLogger().info("Monitor url = {}", this.monitorUrl);
 
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.exit(-1);
 			}
 		} else {
-			this.getLogger().info("No application settings founded!");
+			this.getLogger().error("No application settings founded!");
 			System.exit(-1);
 		}		
 		this.getLogger().info("");
@@ -77,29 +77,38 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 				oldCommLatency += Long.parseLong(args[7]);
 			}
 			if (args.length==8) {
-				this.getLogger().info("Request received from the P2P collaboration!");
+				this.getLogger().debug("Request received from the P2P collaboration!");
 				if (sendMetricEnable) {
 					Long valueOf = Long.valueOf(headers.get("RequestSize"));
-					metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_REQSENT_NB_0", request.getDatatype().getId(), valueOf);
+					metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_REQSENT_NB_1", request.getDatatype().getId(), valueOf);
 				}
 			} else {
 				//(request received).
-				this.getLogger().info("Request received from the Application manager (APPMgr)!");
+				this.getLogger().debug("Request received from the Application manager (APPMgr)!");
 				if (sendMetricEnable) {
 					Long valueOf = Long.valueOf(headers.get("RequestSize"));
 					metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_REQREC_APP", request.getDatatype().getId(), valueOf);
 				}
 			}
 		}
-		this.getLogger().info( 
-			Util.msg("Request [", headers.get("RequestID"),
-				" size = [", headers.get("RequestSize"),
-				"] submitted to process in ", headers.get("StartDateTime"),
-				" - Processing time (with P2P) = ", headers.get("TimeSpentWithP2P"),
-				" Old latency = ", Long.toString(oldCommLatency)
-			)
+		this.getLogger().debug( 
+			"Request [{}] size = [{}] submitted to process in {} - Processing time (with P2P) = {} Old latency = {}",
+				headers.get("RequestID"),
+				headers.get("RequestSize"),
+				headers.get("StartDateTime"),
+				headers.get("TimeSpentWithP2P"),
+				Long.toString(oldCommLatency)
 		);
 
+/*		this.getLogger().info( 
+				Util.msg("Request [", headers.get("RequestID"),
+					" size = [", headers.get("RequestSize"),
+					"] submitted to process in ", headers.get("StartDateTime"),
+					" - Processing time (with P2P) = ", headers.get("TimeSpentWithP2P"),
+					" Old latency = ", Long.toString(oldCommLatency)
+				)
+			);
+*/
 		VirtualNode vn = null;
 		ResponseEntity<VirtualNode> httpRespVN;
 		try {
@@ -116,8 +125,8 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 				}
 			}
 		} catch (Exception e1) {
-			String msg = Util.msg("[ERROR] ", "The invocation of the Virtual Node instance cache generated an error!!\n", e1.getMessage());
-			this.getLogger().info(msg);
+			String msg = "[ERROR] The invocation of the Virtual Node instance cache generated an error!!\n"+e1.getMessage();
+			this.getLogger().error(msg);
 			throw new RuntimeException(msg);
 		}
 		if (vn == null) { // A new Virtual Node
@@ -137,8 +146,8 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 					metricService.sendMetricSummaryValue(this.managerApiUrl, headers.get("ExperimentID"), "DT_RESP_DEPLOY", request.getDatatype().getId(), valueOf);
 				}
 			} catch (Exception e) {
-				String msg = Util.msg("[ERROR] ","The invocation of the Resource Provisioner generated an error! ", e.getMessage());
-				this.getLogger().info(msg);
+				String msg = "[ERROR] The invocation of the Resource Provisioner generated an error! "+e.getMessage();
+				this.getLogger().error(msg);
 				throw new Exception(msg);
 			}
 		} else {
@@ -162,14 +171,13 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 					metrics = new Metrics();
 			} catch (Exception e) {
 				metrics = new Metrics();
-				this.getLogger().info( Util.msg("[ERROR] Accessing the monitor. ", e.getMessage()) );
+				this.getLogger().error("[ERROR] Accessing the monitor. {}", e.getMessage());
 			}
 
 			if (metrics.isResourceBusy()) {
 //				this.getLogger().info( Util.msg("VirtualNodeMetrics : ", metrics.toString()));
-				this.getLogger().info( Util.msg("Invoking Resource provisioner to scale-up the VN container[",vn.getId(),"...",
-						" Request [", args[0], "] StartDatetime= ", args[1])
-				);
+				this.getLogger().info( "Invoking Resource provisioner to scale-up the VN container[{}] - Request [{}] - StartDatetime= {}", 
+						vn.getId(), args[0], args[1]);
 				
 				// Scale-up the Virtual Node container
 				ResourceProvisioningParams paramRP = new ResourceProvisioningParams();
@@ -180,7 +188,7 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 						Util.getDefaultHeaders(headers), HttpMethod.POST, paramRP, VirtualNode.class);
 					
 					if (!httpRespVN.hasBody()) {
-						this.getLogger().info(Util.msg("[No scale-up] The request [",  headers.get("RequestID"), "] was submitted to the collaboration process!"));
+						this.getLogger().info("[No scale-up] The request [{}] was submitted to the collaboration process!", headers.get("RequestID"));
 						return;
 					}
 					
@@ -192,8 +200,8 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 					}
 
 				} catch (Exception e) {
-					String msg = Util.msg("[ERROR] ","The invocation of the Resource Provisioner generated an error!\n", e.getMessage());
-					this.getLogger().info(msg);
+					String msg = "[ERROR] The invocation of the Resource Provisioner generated an error!\n"+e.getMessage();
+					this.getLogger().error(msg);
 					throw new RuntimeException(msg);
 				}
 			}
@@ -202,7 +210,7 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 			try {
 				this.sendRequestToVirtualNode(vn, request, headers);
 			} catch (Exception e) {
-				this.getLogger().info(Util.msg("[ERROR] ",e.getMessage()));
+				this.getLogger().error("[ERROR] {}",e.getMessage());
 				throw new RuntimeException(e.getMessage());
 			}
 		} else {
@@ -222,16 +230,15 @@ public class ResourceAllocatorService extends AbstractService implements IReques
 					vn_app = "/vndatahandling";			
 				}
 				url.append("http://").append(vn.getHostName()).append(":").append(vn.getPort()).append(vn_app).append("/app_request");
-				this.getLogger().info( Util.msg("Forwarding the request ", req, " to the VN :", url.toString()) );
+				this.getLogger().debug("Forwarding the request {} to the VN: {}", req, url.toString());
 			} catch (Exception e) {
-				String msg = Util.msg("[ERROR] ","Invalid URL ", e.getMessage());
-				this.getLogger().info( msg );
+				String msg = "[ERROR] Invalid URL "+e.getMessage();
+				this.getLogger().error( msg );
 				throw new RuntimeException( msg );
 			}
 			Util.sendRequest(url.toString(), Util.getDefaultHeaders(headers), HttpMethod.POST, request, Void.class);
 		} catch (Exception e) {
-			String msg = Util.msg("[ERROR] ", "Error forwarding the request ", req," to the Virtual Node [",
-					vn.getId(), "] ", e.getMessage());
+			String msg = "[ERROR] Error forwarding the request "+req+" to the Virtual Node ["+vn.getId()+"] "+e.getMessage();
 			throw new RuntimeException( msg );
 		}
 

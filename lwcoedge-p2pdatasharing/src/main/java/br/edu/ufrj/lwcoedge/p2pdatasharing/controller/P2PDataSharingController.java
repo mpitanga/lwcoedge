@@ -18,7 +18,6 @@ import org.springframework.web.client.HttpServerErrorException;
 
 import br.edu.ufrj.lwcoedge.core.interfaces.IShare;
 import br.edu.ufrj.lwcoedge.core.model.DataSharing;
-import br.edu.ufrj.lwcoedge.core.util.Util;
 
 @RestController
 @RequestMapping("/p2pdatasharing")
@@ -50,7 +49,7 @@ public class P2PDataSharingController implements ApplicationRunner {
 		} catch (Exception e) {
 			throw 
 			new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-				Util.msg("The data sharing to the neighboring virtual nodes failed. Cause: ",e.getMessage())
+				"The data sharing to the neighboring virtual nodes failed. Cause: "+e.getMessage()
 			);
 		}
 	}
