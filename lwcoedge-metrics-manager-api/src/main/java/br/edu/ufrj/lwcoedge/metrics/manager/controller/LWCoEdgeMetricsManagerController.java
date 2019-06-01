@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpServerErrorException;
 
 import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricCollected;
-import br.edu.ufrj.lwcoedge.core.util.Util;
 import br.edu.ufrj.lwcoedge.metrics.manager.service.ExperimentService;
 
 @RestController
@@ -29,7 +28,7 @@ public class LWCoEdgeMetricsManagerController implements ApplicationRunner{
 			experimentService.clearAll();
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("The metrics were not deleted. Cause: ", e.getMessage()));
+					"The metrics were not deleted. Cause: "+e.getMessage());
 		}
 	}
 
@@ -40,7 +39,7 @@ public class LWCoEdgeMetricsManagerController implements ApplicationRunner{
 			return "Metrics collect -> status ["+experimentService.isActive()+"]";
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("The status was not changed. Cause: ", e.getMessage()));
+					"The status was not changed. Cause: "+e.getMessage());
 		}
 	}
 
@@ -51,7 +50,7 @@ public class LWCoEdgeMetricsManagerController implements ApplicationRunner{
 			return "Metrics collect -> status ["+experimentService.isActive()+"]";
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("The status was not changed. Cause: ", e.getMessage()));
+					"The status was not changed. Cause: "+e.getMessage());
 		}
 	}
 
@@ -61,7 +60,7 @@ public class LWCoEdgeMetricsManagerController implements ApplicationRunner{
 			return experimentService.getAll();
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("Error fetching results. Cause: ", e.getMessage()));
+					"Error fetching results. Cause: "+e.getMessage());
 		}
 	}
 
@@ -71,7 +70,7 @@ public class LWCoEdgeMetricsManagerController implements ApplicationRunner{
 			return experimentService.getKeys();
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("Error fetching results keys. Cause: ", e.getMessage()));
+					"Error fetching results keys. Cause: "+e.getMessage());
 		}
 	}
 
@@ -81,7 +80,7 @@ public class LWCoEdgeMetricsManagerController implements ApplicationRunner{
 			return experimentService.getAll(metric);
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("Error fetching a metric. Cause: ", e.getMessage()));
+					"Error fetching a metric. Cause: "+e.getMessage());
 		}
 	}
 
@@ -91,7 +90,7 @@ public class LWCoEdgeMetricsManagerController implements ApplicationRunner{
 			experimentService.put(mc);
 		} catch (Exception e) {
 			throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, 
-					Util.msg("Error saving metrics. Cause: ", e.getMessage()));
+					"Error saving metrics. Cause: "+e.getMessage());
 		}
 	}
 

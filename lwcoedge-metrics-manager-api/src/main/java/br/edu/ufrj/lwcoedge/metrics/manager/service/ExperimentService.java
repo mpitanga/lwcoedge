@@ -1,6 +1,5 @@
 package br.edu.ufrj.lwcoedge.metrics.manager.service;
 
-import java.lang.annotation.Native;
 import java.util.ArrayList;
 
 import org.apache.commons.collections.map.LRUMap;
@@ -20,11 +19,11 @@ import br.edu.ufrj.lwcoedge.core.util.Util;
 public class ExperimentService extends AbstractService {
 
 	// This constant defines the amount of metrics collected
-	@Native private static int KEY_ELEMENTS = 2000;
-	@Native private static int SUMMARY_ELEMENTS  = 1000;
-	@Native private static int MAX_ELEMENTS  = 15000;
-	@Native private static int TIMETOLIVE    = 3600 * 48;
-	@Native private static int TIMEINTERVAL  = 3600 * 48;
+	private final int KEY_ELEMENTS = 2000;
+	private final int SUMMARY_ELEMENTS  = 1000;
+	private final int MAX_ELEMENTS  = 15000;
+	private final int TIMETOLIVE    = 3600 * 48;
+	private final int TIMEINTERVAL  = 3600 * 48;
 	
 	// Key - Value
     private  Cache<String, Cache<String, AbstractMetric>> cacheMetrics = new Cache<String, Cache<String, AbstractMetric>>(TIMETOLIVE, TIMEINTERVAL, KEY_ELEMENTS);
@@ -74,15 +73,15 @@ public class ExperimentService extends AbstractService {
     private void putMetricComputationalTime(String metric, MetricComputationTime mct)  throws Exception {
     	if (!this.isActive()) return;
     	
-    	this.getLogger().info( Util.msg("Registering metric [",metric,"]...") );    	
+    	this.getLogger().debug("Registering metric [{}]...",metric);    	
     	Cache<String, AbstractMetric> cache = cacheMetrics.get(metric);
-    	this.getLogger().info( Util.msg("Metric in the cache ", Util.obj2json(cache)));
+    	this.getLogger().debug("Metric in the cache {}", Util.obj2json(cache));
     	if (cache == null) {
     		cache = new Cache<String, AbstractMetric>(TIMETOLIVE, TIMEINTERVAL, MAX_ELEMENTS);
     	}
     	cache.put(mct.getId(), mct);
     	cacheMetrics.put(metric, cache);
-    	this.getLogger().info( Util.msg("Metric after cache updated ", Util.obj2json(cache)));
+    	this.getLogger().debug("Metric after cache updated {}", Util.obj2json(cache));
     }
 
     private void putMetricAmountAndTimes(String metric, MetricAmountAndTimes maat)  throws Exception {
