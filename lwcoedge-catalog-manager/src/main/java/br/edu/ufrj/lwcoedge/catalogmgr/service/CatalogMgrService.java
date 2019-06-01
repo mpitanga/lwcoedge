@@ -2,7 +2,6 @@ package br.edu.ufrj.lwcoedge.catalogmgr.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.annotation.Native;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.stereotype.Service;
@@ -22,9 +21,9 @@ import br.edu.ufrj.lwcoedge.core.util.Util;
 public class CatalogMgrService extends AbstractService implements IAppConfig, IVNCat, ICatalog, IRegistry {
 
 	// This constant defines the amount of data types per edge node
-	@Native private static int MAX_ELEMENTS = 1000;
-	@Native private static int TIMETOLIVE = 0; // no expires
-	@Native private static int TIMEINTERVAL = 0; // no expires
+	private final int MAX_ELEMENTS = 100;
+	private final int TIMETOLIVE = 0; // no expires
+	private final int TIMEINTERVAL = 0; // no expires
 	
 	// Key - Value
     private Cache<String, Descriptor> cache = new Cache<String, Descriptor>(TIMETOLIVE, TIMEINTERVAL, MAX_ELEMENTS);
@@ -32,7 +31,7 @@ public class CatalogMgrService extends AbstractService implements IAppConfig, IV
 	@Override
 	public void appConfig(ApplicationArguments args) {
 		if (args == null || args.getOptionNames().isEmpty()) {
-			this.getLogger().info("No descriptors repository found!");
+			this.getLogger().error("No descriptors repository found!");
 			System.exit(-1);
 		}
 		try {
@@ -48,7 +47,7 @@ public class CatalogMgrService extends AbstractService implements IAppConfig, IV
 			}
 			this.getLogger().info("Load finished!");
 		} catch (IOException e) {
-			this.getLogger().info( Util.msg("[ERROR] ","Load descriptors error!\n",e.getMessage()));
+			this.getLogger().error( Util.msg("[ERROR] ","Load descriptors error!\n",e.getMessage()));
 			System.exit(-1);
 		}
 	
