@@ -7,6 +7,7 @@
 	<artifactId>lwcoedge-experiment-core</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
+	
 	<name>lwcoedge-experiment-core</name>
 	<description>LW-CoEdge - Core metrics database</description>
 
@@ -14,15 +15,15 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
-	    <maven.compiler.source>1.8</maven.compiler.source>
-	    <maven.compiler.target>1.8</maven.compiler.target>
+		<maven.compiler.source>10</maven.compiler.source>
+	    <maven.compiler.target>10</maven.compiler.target>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
-			<version>2.1.1.RELEASE</version>
+			<version>2.1.3.RELEASE</version>
 		</dependency>
 
 		<dependency>
@@ -30,8 +31,14 @@
 			<artifactId>lwcoedge-core</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-log4j2</artifactId>
+			<version>2.1.3.RELEASE</version>
+		</dependency>
 	</dependencies>
 
+<!-- 
 	<build>
 		<plugins>
 			<plugin>
@@ -40,6 +47,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
+ -->
 
 </project>

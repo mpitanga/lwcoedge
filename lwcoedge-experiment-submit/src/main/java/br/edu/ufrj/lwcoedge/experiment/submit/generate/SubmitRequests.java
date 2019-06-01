@@ -8,9 +8,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.icmp4j.IcmpPingRequest;
-import org.icmp4j.IcmpPingResponse;
-import org.icmp4j.IcmpPingUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -33,6 +30,8 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 	@Autowired
 	ServiceDB service;
 	
+	private long timeSleep = 40;
+	
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		this.getLogger().info("Loading the LW-CoEdge Experiment-Submit settings...");
@@ -46,7 +45,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 		ObjectMapper objectMapper = new ObjectMapper();
 		ExperimentSubmitConfig config = objectMapper.readValue(new File(fileName), ExperimentSubmitConfig.class);
 		this.getLogger().info("LW-CoEdge Experiment-Submit settings loaded.");
-		this.getLogger().info(Util.msg("Configuration ->",config.toString()));
+		this.getLogger().info("Configuration ->{}",config.toString());
 
 		try {
 			this.loadComponentsPort(args);			
@@ -66,28 +65,14 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 		boolean clearMetrics = config.isClearmetrics();
 		boolean generateResults = config.isGenerateresults();
 		
+		this.timeSleep = config.getPause();
+		
 		int waitTogenerate = (config.getWaittogenerate() == null || config.getWaittogenerate() == 0) ? 5*60 : config.getWaittogenerate();
 				
 		clearCacheMetrics(edgeNodes, "E0", -1);
 
 		runExperiment(experimentName, path, edgeNodes, executeExperiment, clearMetrics, generateResults, urlCallBack, waitTogenerate);
 
-	}
-
-	final IcmpPingRequest pingRequest = IcmpPingUtil.createIcmpPingRequest();
-	private long ping(String host, int times, int packetSize) {
-		this.pingRequest.setHost (host);
-		this.pingRequest.setPacketSize(packetSize);
-
-		int time = 0;
-		// repeat a few times
-		for (int count = 0; count < times; count ++) {
-			// delegate
-			final IcmpPingResponse response = IcmpPingUtil.executePingRequest(this.pingRequest);
-			time += response.getRtt();
-		}
-		Double latency = (double)time/times;
-		return latency.longValue() ;
 	}
 
 	private void runExperiment(String experimentName, String path, String[] edgeNodes, 
@@ -105,13 +90,13 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 		int oldIdxhost = -1;
 		
 		LocalDateTime startEx = LocalDateTime.now();
-		long timeSleep = ping(edgeNodes[0], 4, 32);
-		if (timeSleep > 50)
-			timeSleep = 0;
 		
 		//int firstRequests = 0;
 		try {
+			this.getLogger().info("Loading requests from database...");
 			List<Requests> requests = service.getRequests(experimentName);
+			Thread.sleep(timeSleep);
+			this.getLogger().info("Starting submit the requests...");
 			for (Requests request : requests) {
 
 				if (oldExperimentCode == null || !oldExperimentCode.equals(request.getExperimentcode())) {
@@ -143,17 +128,6 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 					}
 				}
 				sendRequest(request, urlCallBack);
-/*
-				if (++firstRequests > 100) {
-					if (timeSleep == 0) {
-						timeSleep = 2000; // wait 2s to dispatch the firsts requests
-					} else {
-						timeSleep = 100;
-					}
-				} else {
-					timeSleep = 50;
-				}
-*/				
 				Thread.sleep(timeSleep);
 			}
 			if (oldExperimentCode  != null) {
@@ -162,27 +136,30 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 				}
 			}
 		} catch (Exception e) {
-			this.getLogger().info("[ERROR] "+e.getMessage());
+			this.getLogger().info("[ERROR] {}",e.getMessage());
 		}
 
 		LocalDateTime finishEx = LocalDateTime.now();
 		Duration d = Duration.between(startEx, finishEx);
 		this.getLogger().info("----------------------------------");
-		this.getLogger().info("Experiment Name    -> "+experimentName);
-		this.getLogger().info("Start experiment   -> "+startEx);
-		this.getLogger().info("Finish experiment  -> "+finishEx);
-		this.getLogger().info("Time elapsed (sec) -> "+d.getSeconds());
-		this.getLogger().info("Time elapsed (ms)  -> "+d.toMillis());
+		this.getLogger().info("Experiment Name    -> {}",experimentName);
+		this.getLogger().info("Start experiment   -> {}",startEx);
+		this.getLogger().info("Finish experiment  -> {}",finishEx);
+		this.getLogger().info("Time elapsed (sec) -> {}",d.getSeconds());
+		this.getLogger().info("Time elapsed (ms)  -> {}",d.toMillis());
 		this.getLogger().info("----------------------------------");
 
 	}
 
 	private void sendRequest(Requests request, String urlCallBack) {
 		try {				
-			this.getLogger().info( Util.msg("Submitting -> ", request.getExperimentcode(), " - ", 
-					String.valueOf(request.getExperimentvar()), " of ", String.valueOf(request.getVariation())) );
-			this.getLogger().info(Util.msg("URL-> ",request.getUrl()));
-			this.getLogger().info(Util.msg("Request -> ", request.getRequest()));
+			this.getLogger().info( "Submitting -> {} - {} of {}", 
+					request.getExperimentcode(),  
+					String.valueOf(request.getExperimentvar()), 
+					String.valueOf(request.getVariation()))
+			;
+			this.getLogger().info("URL-> {}",request.getUrl());
+			this.getLogger().info("Request -> {}", request.getRequest());
 			HttpHeaders headers = Util.getDefaultHeaders();
 			headers.add("ExperimentID", Util.msg(request.getExperimentcode(), ".", String.valueOf(request.getVariation())));
 			headers.add("ExperimentVar", String.valueOf(request.getExperimentvar()));
@@ -201,10 +178,9 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 
 	private void generateFileResults(final String path, final String[] EdgeNodes, final int idxHost, final int waitTogenerate) {
 		try {
-			this.getLogger().info("Waiting "+waitTogenerate+"(s) to start a new experiment execution...");
+			this.getLogger().info("Waiting {}(s) to start a new experiment execution...",waitTogenerate);
 			Thread.sleep(waitTogenerate*1000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -223,7 +199,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 
 	private void clearCacheMetrics(final String[] EdgeNodes, String experimentCode, int idxHost) {
 		this.getLogger().info("-----------------------------------------------------------");
-		this.getLogger().info(Util.msg("Preparing the environment to start the experiment [",experimentCode,"]..."));
+		this.getLogger().info("Preparing the environment to start the experiment [{}]...",experimentCode);
 		this.getLogger().info("-----------------------------------------------------------");
 		
 		if (idxHost == -1) {
@@ -240,7 +216,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 			String managerApiUrl = 
 					this.getUrl("http://", en, this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/experiment/clear");
 
-			this.getLogger().info("Cleaning metrics..."+managerApiUrl);
+			this.getLogger().info("Cleaning metrics...{}",managerApiUrl);
 			Util.sendRequest( managerApiUrl, Util.getDefaultHeaders(), HttpMethod.GET, null, Void.class);
 
 			Thread.sleep(100);
@@ -248,7 +224,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 			managerApiUrl = 
 					this.getUrl("http://", en, this.getPorts().getLwcoedge_manager_api(), "/lwcoedgemgr/metrics/enable");
 
-			this.getLogger().info("Enabling metrics..."+managerApiUrl);
+			this.getLogger().info("Enabling metrics...{}",managerApiUrl);
 
 			Util.sendRequest( managerApiUrl, Util.getDefaultHeaders(), HttpMethod.GET, null, Void.class);
 
@@ -259,7 +235,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 
 	private void activateCollaboration(final String[] EdgeNodes, final boolean value, final int idxHost) {
 		this.getLogger().info("-----------------------------------------------------------");
-		this.getLogger().info( Util.msg(" Changing collaboration process status to [", String.valueOf(value), "]") );
+		this.getLogger().info(" Changing collaboration process status to [{}]", String.valueOf(value));
 		this.getLogger().info("-----------------------------------------------------------");
 		if (idxHost == -1) {
 			for (String en : EdgeNodes) {
@@ -269,7 +245,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 					sendRequestActivation(collaborationUrl);
 
 				} catch (Exception e1) {
-					this.getLogger().info("[activateCollaboration] "+e1.getMessage());
+					this.getLogger().info("[activateCollaboration] {}",e1.getMessage());
 				}					
 			}			
 		} else {
@@ -279,14 +255,14 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 				sendRequestActivation(collaborationUrl);
 
 			} catch (Exception e1) {
-				this.getLogger().info("[activateCollaboration] "+e1.getMessage());
+				this.getLogger().info("[activateCollaboration] {}",e1.getMessage());
 			}								
 		}
 	}
 
 	private void activateDataSharing(final String[] EdgeNodes, final boolean value, final int idxHost) {
 		this.getLogger().info("-----------------------------------------------------------");
-		this.getLogger().info( Util.msg(" Changing data sharing process status to [", String.valueOf(value), "]") );
+		this.getLogger().info(" Changing data sharing process status to [{}]", String.valueOf(value));
 		this.getLogger().info("-----------------------------------------------------------");
 		if (idxHost == -1) {
 			for (String en : EdgeNodes) {
@@ -297,7 +273,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 					sendRequestActivation(DataSharingUrl);
 					
 				} catch (Exception e1) {
-					this.getLogger().info("[activateDataSharing] "+e1.getMessage());
+					this.getLogger().info("[activateDataSharing] {}",e1.getMessage());
 				}					
 			}			
 		} else {
@@ -308,7 +284,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 				sendRequestActivation(DataSharingUrl);
 				
 			} catch (Exception e1) {
-				this.getLogger().info("[activateDataSharing] "+e1.getMessage());
+				this.getLogger().info("[activateDataSharing] {}",e1.getMessage());
 			}								
 		}
 	}
@@ -325,7 +301,7 @@ public class SubmitRequests extends AbstractService implements ApplicationRunner
 					Util.getDefaultHeaders(), HttpMethod.GET, null, ArrayList.class);
 			ArrayList<String> keys = httpResp.getBody();
 			for (String key : keys) {
-				this.getLogger().info( Util.msg(host,": Generating file to the key -> ",key));
+				this.getLogger().info("{}: Generating file to the key -> {}",host,key);
 				ResponseEntity<String> keyContent = Util.sendRequest( Util.msg("http://", host, ":10500/lwcoedgemgr/metrics/results/keys/",key), 
 						Util.getDefaultHeaders(), HttpMethod.GET, null, String.class);
 				try {

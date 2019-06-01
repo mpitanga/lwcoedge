@@ -15,6 +15,8 @@ public class ExperimentSubmitConfig implements Serializable {
     private boolean generateresults;
     private boolean clearmetrics;
 	private String callback;
+	private Integer waittogenerate;
+	private Integer pause;
        
 	public ExperimentSubmitConfig() {}
 
@@ -119,6 +121,22 @@ public class ExperimentSubmitConfig implements Serializable {
 	@Override
 	public String toString() {
 		return Util.obj2json(this);
+	}
+
+	public Integer getWaittogenerate() {
+		return waittogenerate;
+	}
+
+	public void setWaittogenerate(Integer waittogenerate) {
+		this.waittogenerate = waittogenerate;
+	}
+
+	public Integer getPause() {
+		return pause;
+	}
+
+	public void setPause(Integer pause) {
+		this.pause = pause;
 	}
 
 }

@@ -15,19 +15,22 @@ public class ExperimentConfig implements Serializable {
     private Integer idxnode;
     private Integer cycles;
     private Integer requestvariation;
+    private Integer minfreshness;
     private Integer maxfreshness;
     private Integer maxresponsetime;
     private boolean executeexperiment;
     private boolean generateresults;
     private boolean clearmetrics;
-    private boolean randomfreshness;
     private String[] datatypeids;
     private Integer idxdatatype;
+    private Integer pause;
 
     private Collaboration collaboration;
+    private Integer waittogenerate;
        
 	public ExperimentConfig() {}
 
+	
 	/**
 	 * @return the basepath
 	 */
@@ -225,20 +228,6 @@ public class ExperimentConfig implements Serializable {
 	}
 
 	/**
-	 * @return the randomfreshness
-	 */
-	public boolean isRandomfreshness() {
-		return randomfreshness;
-	}
-
-	/**
-	 * @param randomfreshness the randomfreshness to set
-	 */
-	public void setRandomfreshness(boolean randomfreshness) {
-		this.randomfreshness = randomfreshness;
-	}
-
-	/**
 	 * @return the datatypeids
 	 */
 	public String[] getDatatypeids() {
@@ -278,6 +267,36 @@ public class ExperimentConfig implements Serializable {
 	 */
 	public void setCollaboration(Collaboration collaboration) {
 		this.collaboration = collaboration;
+	}
+
+
+	public Integer getWaittogenerate() {
+		return waittogenerate;
+	}
+
+
+	public void setWaittogenerate(Integer waittogenerate) {
+		this.waittogenerate = waittogenerate;
+	}
+
+
+	public Integer getMinfreshness() {
+		return minfreshness;
+	}
+
+
+	public void setMinfreshness(Integer minfreshness) {
+		this.minfreshness = minfreshness;
+	}
+
+
+	public Integer getPause() {
+		return pause;
+	}
+
+
+	public void setPause(Integer pause) {
+		this.pause = pause;
 	}
 	
 }

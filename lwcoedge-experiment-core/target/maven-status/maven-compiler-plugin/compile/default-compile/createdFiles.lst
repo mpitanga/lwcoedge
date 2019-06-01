@@ -1,0 +1,14 @@
+br\edu\ufrj\lwcoedge\experiment\core\model\MetricAmountTimesValues.class
+br\edu\ufrj\lwcoedge\experiment\core\model\MetricCTAndAmount.class
+br\edu\ufrj\lwcoedge\experiment\core\model\MetricAmountValues.class
+br\edu\ufrj\lwcoedge\experiment\core\model\ExperimentLoadToDBConfig.class
+br\edu\ufrj\lwcoedge\experiment\core\model\MetricAmountAndTimesValues.class
+br\edu\ufrj\lwcoedge\experiment\core\model\MetricCT.class
+br\edu\ufrj\lwcoedge\experiment\core\model\MetricCTAmount.class
+br\edu\ufrj\lwcoedge\experiment\core\model\MetricComputationTimeValues.class
+br\edu\ufrj\lwcoedge\experiment\core\model\MetricAmountAndValues.class
+br\edu\ufrj\lwcoedge\experiment\core\model\Datasharingactivated.class
+br\edu\ufrj\lwcoedge\experiment\core\LwcoedgeExperimentCoreApplication.class
+br\edu\ufrj\lwcoedge\experiment\core\model\Collaboration.class
+br\edu\ufrj\lwcoedge\experiment\core\model\ExperimentConfig.class
+br\edu\ufrj\lwcoedge\experiment\core\model\ExperimentSubmitConfig.class
