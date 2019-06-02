@@ -8,10 +8,12 @@ import org.springframework.stereotype.Repository;
 import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricAmount;
 import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricAmountAndValue;
 import br.edu.ufrj.lwcoedge.core.metrics.experiment.MetricIdentification;
+import br.edu.ufrj.lwcoedge.experiment.core.model.MetricCT;
 import br.edu.ufrj.lwcoedge.experiment.core.model.MetricCTAndAmount;
 import br.edu.ufrj.lwcoedge.experiment.db.entities.Metricamount;
 import br.edu.ufrj.lwcoedge.experiment.db.entities.Metricamountandtime;
 import br.edu.ufrj.lwcoedge.experiment.db.entities.Metricamountandvalue;
+import br.edu.ufrj.lwcoedge.experiment.db.entities.Metriccomputationtime;
 
 @Repository
 public class MetricsDAO {
@@ -83,4 +85,31 @@ public class MetricsDAO {
 		em.merge(maDB);
 		
 	}
+	
+	public void saveMetricComputationTimeValues(String experimentName, String edgeNode, MetricCT mc, int variation) {
+		Metriccomputationtime maDB = new Metriccomputationtime();
+		MetricIdentification mi = new MetricIdentification(mc.getId());
+		
+		//E1.200
+		String[] exp = mi.getExperiment().split("\\.");
+		
+		maDB.setExperimentname(experimentName);
+		maDB.setExperimentcode(exp[0]);
+		
+		maDB.setEdgenode(edgeNode);
+		maDB.setMetric(mi.getMetric());
+		maDB.setVariation(variation);
+		
+		maDB.setDatatypeid(mi.getDatatypeID());
+		
+		maDB.setStart( mc.getStart() );
+		maDB.setFinish( mc.getFinish() );
+		
+		maDB.setComputationinmillis( mc.getComputationinMillis().intValue() );
+		maDB.setComputationinseconds( mc.getComputationinSeconds().intValue() );
+
+		em.merge(maDB);
+		
+	}
+
 }

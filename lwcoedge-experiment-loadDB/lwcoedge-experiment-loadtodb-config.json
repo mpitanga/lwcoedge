@@ -1,6 +1,6 @@
 {
-	"experimentname": "experiment4-collab",
-	"basepath": "f:/lwcoedge/experimento/results/",
+	"experimentname": "experiment5-collab-40",
+	"basepath": "F:/lwcoedge/experimento_2019_3 - reexec/results/latency/",
 	"edgenodes": [
 		"192.168.237.128",
 		"192.168.237.129",
@@ -8,8 +8,5 @@
 		"192.168.237.131",
 		"192.168.237.132"
 	],
-	"idxnode": -1,
-	"times": 10,
-	"cycles": 5,
-	"requestvariation": 200
+	"times": 10
 }
