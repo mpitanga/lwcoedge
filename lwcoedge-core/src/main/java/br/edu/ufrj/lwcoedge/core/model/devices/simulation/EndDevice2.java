@@ -8,15 +8,10 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import br.edu.ufrj.lwcoedge.context.broker.OrionBroker;
-import br.edu.ufrj.lwcoedge.context.broker.elements.Attributes;
-import br.edu.ufrj.lwcoedge.context.broker.elements.ContextBrokerResponse;
-import br.edu.ufrj.lwcoedge.context.broker.elements.ContextElement;
-import br.edu.ufrj.lwcoedge.context.broker.elements.Metadata;
 import br.edu.ufrj.lwcoedge.core.model.Data;
 import br.edu.ufrj.lwcoedge.core.util.Util;
 
-public class EndDevice extends AbstractDevice implements Serializable {
+public class EndDevice2 extends AbstractDevice implements Serializable {
 
 	private static final long serialVersionUID = 8866494361321407243L;
 
@@ -25,13 +20,11 @@ public class EndDevice extends AbstractDevice implements Serializable {
 	
 	private EndDeviceType type;
 	private Data data;
+	private Long interval = Long.valueOf(30 * 1000); // 30s
 	
-	private OrionBroker ob;
-
-	public EndDevice(String hostName) {
+	public EndDevice2(String hostName) {
 		super(hostName);
-		this.generateRandomData();		
-		this.ob = new OrionBroker("broker","1026","lwcoedge", "/");
+		this.run();
 	}
 
 	private Integer getRamdomValue() {
@@ -47,6 +40,15 @@ public class EndDevice extends AbstractDevice implements Serializable {
 		d.setAcquisitiondatetime(dh);
 		this.data = d;
 	}
+
+	public void setInterval(Long interval) {
+		// To avoid blocking other threads
+		this.interval = (interval == 0 ? 1000 : interval);
+	}
+
+	public Long getInterval() {
+		return interval;
+	}
 	
 	// Direct access
 	public Data getData() {
@@ -61,32 +63,13 @@ public class EndDevice extends AbstractDevice implements Serializable {
 	}
 
 	public Data getDataDB() {
-		Data d = new Data();
 		try {
 //			this.generateRandomData();
 			// The communication latency is based on the access to the FIWARE Orion Broker component.
 			// this number is an average measured after 200 access.
-			// timeinstant = 2019-06-06T20:24:36.803Z
-			
-			ContextBrokerResponse response = ob.getEntityById(this.getHostName(), "Device");
-			ContextElement element = response.getContextResponses().get(0).getContextElement();
-			Attributes attr = element.getAttributes().get(4);
-			d.setValue(attr.getValue());
-			String dh;
-			
-			if (attr.getMetadatas().size()>0) {
-				Metadata meta = attr.getMetadatas().get(0);
-				dh = meta.getValue().replace('T', ' ').replaceAll("Z", "");
-			} else {
-				attr = element.getAttributes().get(0);
-				dh = attr.getValue().replace('T', ' ').replaceAll("Z", "");				
-			}
-
-			d.setAcquisitiondatetime(dh);
-			this.data = d;
-
+			Thread.sleep(19); 
 			return data;
-		} catch (Exception e) {
+		} catch (InterruptedException e) {
 			logger.error(e.getMessage());
 			return data;
 		}
@@ -124,6 +107,26 @@ public class EndDevice extends AbstractDevice implements Serializable {
 	@Override
 	public String toString() {
 		return Util.obj2json(this);
+	}
+
+	//Simulates the device sending his sensing data to the internal database..
+	private void run() {
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (!Thread.currentThread().isInterrupted()) {
+					generateRandomData();
+					logger.debug("Sending data [{} to the internal database...",data.toString());
+					try {
+						Thread.sleep(interval);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}			
+				}				
+			}
+		});
+		t.setDaemon(true);
+		t.start();
 	}
 
 }
