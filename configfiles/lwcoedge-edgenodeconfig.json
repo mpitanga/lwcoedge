@@ -1,0 +1,22 @@
+{
+  "edgeNode": {
+    "hostName": "EN0",
+    "ip": "192.168.1.105",
+    "coordinates": "-22.8156986,-43.4265209",
+    "connectedDevices": [{"value":"DeviceID1"},{"value":"DeviceID4"}],
+    "neighborhood": [
+      {
+          "hostName": "EN1",
+          "ip": "192.168.1.107",
+          "coordinates": "-30.0,-63.0",
+          "connectedDevices": [{"value":"DeviceID1"},{"value":"DeviceID4"}]
+      },
+      {
+          "hostName": "EN4",
+          "ip": "192.168.1.110",
+          "coordinates": "-30.0,-63.0",
+          "connectedDevices": [{"value":"DeviceID1"},{"value":"DeviceID4"}]
+      }
+    ]
+  }
+}

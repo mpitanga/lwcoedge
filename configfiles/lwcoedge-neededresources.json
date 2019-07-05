@@ -1,0 +1,27 @@
+{ "neededResources":[
+	{
+		"type":"simple",
+		"resources" : {
+			"physicalMemorySize" : 1024,
+			"unit" : "K",
+			"physicalCpuNumbers" : 1
+		}
+	},
+	{
+		"type":"actuation",
+		"resources" : {
+			"physicalMemorySize" : 1024,
+			"unit" : "K",
+			"physicalCpuNumbers" : 1
+		}
+	},
+    {
+		"type":"complex",
+		"resources" : {
+			"physicalMemorySize" : 2048,
+			"unit" : "K",
+			"physicalCpuNumbers" : 1
+		}
+	}
+  ]
+}
