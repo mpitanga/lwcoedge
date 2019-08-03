@@ -1,4 +1,4 @@
-FROM openjdk:12-alpine
+FROM openjdk:11.0.3-jdk-slim
 
 MAINTAINER Marcelo Pitanga <mpitanga@gmail.com>
 
@@ -14,4 +14,4 @@ COPY $JSON1 $APP_DIR/$JSON1
 #set the working directory
 WORKDIR $APP_DIR
 
-ENTRYPOINT ["java", "-XX:+UseG1GC", "-jar", "lwcoedge-catalog-manager-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-XX:+UseG1GC", "-Xmx64m", "-Xms8m", "-jar", "lwcoedge-catalog-manager-0.0.1-SNAPSHOT.jar"]
