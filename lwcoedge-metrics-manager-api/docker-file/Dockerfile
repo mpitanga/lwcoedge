@@ -1,4 +1,4 @@
-FROM openjdk:12-alpine
+FROM openjdk:11.0.3-jdk-slim
 
 MAINTAINER Marcelo Pitanga <mpitanga@gmail.com>
 
@@ -12,4 +12,4 @@ COPY $APP $APP_DIR/$APP
 #set the working directory
 WORKDIR $APP_DIR
 
-ENTRYPOINT ["java", "-XX:+UseG1GC", "-jar", "lwcoedge-metrics-manager-api-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-XX:+UseG1GC", "-Xmx64m", "-Xms8m", "-jar", "lwcoedge-metrics-manager-api-0.0.1-SNAPSHOT.jar"]
